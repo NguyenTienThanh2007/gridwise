@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # Build context: repository root.
-FROM node:24-slim AS build
+FROM node:25-slim AS build
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm install --global pnpm@11.25.0
 WORKDIR /src
@@ -17,7 +17,7 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
 RUN pnpm --filter @gridwise/web build
 
 
-FROM node:24-slim AS runtime
+FROM node:25-slim AS runtime
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     HOSTNAME=0.0.0.0 \
