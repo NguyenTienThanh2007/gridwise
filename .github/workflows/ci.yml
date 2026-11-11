@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UV_VERSION: "0.12.21"
+
+jobs:
+  api:
+    name: API (lint, types, tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # The same database definition as local development: role-creation script, TCP
+      # health check and telemetry switch all come from docker-compose.yml.
+      - run: cp .env.example .env
+      - name: Start PostgreSQL
+        run: docker compose up -d --wait postgres
+      - uses: astral-sh/setup-uv@v10
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - run: uv sync --frozen
+      - run: uv run ruff format --check .
+      - run: uv run ruff check .
+      - run: uv run mypy
+      - name: Unit tests
+        run: uv run pytest -m "not integration"
+      - name: Integration tests (real PostgreSQL)
+        run: uv run pytest -m integration
+      - name: Database logs
+        if: failure()
+        run: docker compose logs --no-color postgres
+
+  web:
+    name: Web (format, lint, types, tests, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+
+  e2e:
+    name: End to end (Compose stack + browser)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: cp .env.example .env
+      - name: Start postgres, migrations and API
+        run: docker compose up -d --build --wait
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm check:bundle
+      - run: pnpm --filter @gridwise/web exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+      - name: Stack logs
+        if: failure()
+        run: docker compose logs --no-color
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report
+          retention-days: 7
+
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: uv sync --frozen
+      - name: Python dependencies
+        run: |
+          uv export --frozen --no-emit-workspace --format requirements-txt -q -o requirements.txt
+          uv run pip-audit --strict --disable-pip --require-hashes -r requirements.txt
+      - name: Node dependencies
+        run: pnpm audit --audit-level moderate
