@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # Build context: repository root.
-FROM python:3.13-slim AS build
+FROM python:3.15-slim AS build
 COPY --from=ghcr.io/astral-sh/uv:0.12.21 /uv /bin/uv
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
@@ -17,7 +17,7 @@ COPY apps/api apps/api
 RUN uv sync --frozen --no-dev --no-editable --package gridwise-api
 
 
-FROM python:3.13-slim AS runtime
+FROM python:3.15-slim AS runtime
 RUN useradd --system --uid 10001 --no-create-home gridwise
 ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
