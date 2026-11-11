@@ -1,0 +1,118 @@
+# GRIDWISE local stack.
+#
+#   docker compose up -d --build --wait               postgres + migrate + api
+#   docker compose --profile web up -d --build --wait  ... plus the web app
+#
+# Later phases add services behind their own profiles (streaming, lake, orchestration,
+# observability) so the default stack stays small. See docs/architecture/overview.md.
+#
+# Database roles (docs/decisions/0006):
+#   postgres        bootstrap superuser; used by no application
+#   gridwise_owner  migrations only (the `migrate` service)
+#   gridwise_app    the API only (the `api` service); no superuser, no BYPASSRLS, owns nothing
+# Each service receives only its own role's credentials.
+name: gridwise
+
+x-logging-environment: &logging-environment
+  GRIDWISE_LOG_LEVEL: ${GRIDWISE_LOG_LEVEL:-INFO}
+  GRIDWISE_LOG_FORMAT: json
+
+services:
+  postgres:
+    # TimescaleDB image from the start so the image never has to be swapped. The image
+    # pre-installs the extension in every database; GRIDWISE creates no hypertables
+    # until P2 (docs/decisions/0003).
+    image: timescale/timescaledb:2.31.0-pg18
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+      GRIDWISE_DB_OWNER_PASSWORD: ${GRIDWISE_DB_OWNER_PASSWORD:?set GRIDWISE_DB_OWNER_PASSWORD in .env}
+      GRIDWISE_DB_APP_PASSWORD: ${GRIDWISE_DB_APP_PASSWORD:?set GRIDWISE_DB_APP_PASSWORD in .env}
+      # No usage reporting to Timescale. Applied when the data directory is initialised.
+      TIMESCALEDB_TELEMETRY: "off"
+      # Keep the tuner modest: the development Docker VM is small.
+      TS_TUNE_MEMORY: 1GB
+      TS_TUNE_NUM_CPUS: "2"
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5450}:5432"
+    volumes:
+      # PostgreSQL 18 images keep data under /var/lib/postgresql/<major>/docker.
+      - postgres-data:/var/lib/postgresql
+      # One file, not the directory: the image ships its own init scripts there.
+      - ./infrastructure/postgres/init/010-gridwise-roles.sh:/docker-entrypoint-initdb.d/010-gridwise-roles.sh:ro
+    healthcheck:
+      # TCP on purpose. During first-time initialisation the server listens on the Unix
+      # socket only, so a socket check reports "ready" before clients can connect.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+
+  migrate:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/api.Dockerfile
+    image: gridwise-api:local
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      <<: *logging-environment
+      GRIDWISE_MIGRATION_DATABASE_URL: postgresql+psycopg://gridwise_owner:${GRIDWISE_DB_OWNER_PASSWORD:?set GRIDWISE_DB_OWNER_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:?set POSTGRES_DB in .env}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    image: gridwise-api:local
+    environment:
+      <<: *logging-environment
+      GRIDWISE_ENVIRONMENT: ${GRIDWISE_ENVIRONMENT:-local}
+      GRIDWISE_DATABASE_URL: postgresql+psycopg://gridwise_app:${GRIDWISE_DB_APP_PASSWORD:?set GRIDWISE_DB_APP_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:?set POSTGRES_DB in .env}
+      GRIDWISE_CORS_ORIGINS: '["http://localhost:${WEB_PORT:-3100}"]'
+    ports:
+      - "127.0.0.1:${API_PORT:-8020}:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=3)"
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 5s
+    restart: unless-stopped
+
+  web:
+    profiles: ["web"]
+    build:
+      context: .
+      dockerfile: infrastructure/docker/web.Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8020}
+    image: gridwise-web:local
+    ports:
+      - "127.0.0.1:${WEB_PORT:-3100}:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/dashboard').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  postgres-data:

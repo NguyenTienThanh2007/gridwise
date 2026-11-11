@@ -1,0 +1,60 @@
+[project]
+name = "gridwise"
+version = "0.1.0"
+description = "GRIDWISE workspace root (not a distributable package)."
+requires-python = ">=3.13,<3.14"
+dependencies = ["gridwise-api"]
+
+[dependency-groups]
+dev = [
+    "mypy>=2.4,<3",
+    "pip-audit>=2.9",
+    "pytest>=9.2,<10",
+    "pytest-asyncio>=1.2",
+    "ruff>=0.17,<0.18",
+    "httpx>=0.28",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+gridwise-api = { workspace = true }
+
+[tool.uv.workspace]
+members = ["apps/api"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+extend-exclude = ["node_modules"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "N", "S", "C4", "SIM", "RUF", "ASYNC", "DTZ", "T20", "PT"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = ["S101"]
+"**/migrations/**" = ["N999"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["gridwise_api"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+plugins = ["pydantic.mypy"]
+files = ["apps/api/src", "apps/api/tests", "apps/api/migrations"]
+mypy_path = ["apps/api/src", "apps/api"]
+explicit_package_bases = true
+
+[tool.pytest.ini_options]
+testpaths = ["apps/api/tests"]
+# Explicit, so tests do not depend on the editable-install .pth file: macOS can flag that
+# file hidden, and Python 3.13 ignores hidden .pth files.
+pythonpath = ["apps/api/src", "apps/api"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+addopts = "-ra --strict-markers --strict-config"
+markers = [
+    "integration: needs a running PostgreSQL (GRIDWISE_DATABASE_URL)",
+]

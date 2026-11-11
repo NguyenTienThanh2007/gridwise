@@ -1,0 +1,8 @@
+node_modules
+.next
+.venv
+pnpm-lock.yaml
+uv.lock
+playwright-report
+test-results
+apps/api

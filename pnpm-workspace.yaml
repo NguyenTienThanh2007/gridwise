@@ -1,0 +1,15 @@
+packages:
+  - "apps/web"
+
+# Dependencies explicitly allowed to run install scripts (pnpm blocks all others).
+allowBuilds:
+  esbuild: true
+  sharp: true
+  "@tailwindcss/oxide": true
+  unrs-resolver: true
+
+overrides:
+  # GHSA-g3hv-75wg-m249 (ReDoS). Pulled in by typescript-eslint, which still ranges on 10.x.
+  # Remove once typescript-eslint depends on a patched minimatch. Pinned to a release old
+  # enough to pass pnpm's minimum-release-age guard (11.x shipped 9 releases in 2 weeks).
+  "minimatch@>=7.0.0 <11.0.1": 11.0.3
