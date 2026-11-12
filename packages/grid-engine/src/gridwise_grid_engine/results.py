@@ -5,7 +5,8 @@ Sign conventions (also in docs/domain/grid-engine.md):
 * bus ``p_mw`` / ``q_mvar``: net power *withdrawn* from the network at the bus
   (load minus supply). A bus that only feeds the network, such as the slack bus, is negative.
 * line ``p_from_mw`` etc.: power flowing *into the line* at that end.
-* external grid ``p_mw`` / ``q_mvar``: power *supplied to* the network.
+* transformer ``p_hv_mw`` etc.: power flowing *into the transformer* at that side.
+* external grid and generator ``p_mw`` / ``q_mvar``: power *supplied to* the network.
 
 ``None`` always means "there is no value" (the element is de-energised). It never means
 zero, and a de-energised element is never given a made-up number.
@@ -49,6 +50,36 @@ class LineResult:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class TransformerResult:
+    transformer_id: str
+    energized: bool
+    p_hv_mw: float | None
+    q_hv_mvar: float | None
+    p_lv_mw: float | None
+    q_lv_mvar: float | None
+    #: Active power lost in the transformer: p_hv_mw + p_lv_mw.
+    active_loss_mw: float | None
+    #: Reactive power absorbed by the transformer: q_hv_mvar + q_lv_mvar.
+    reactive_loss_mvar: float | None
+    current_hv_ka: float | None
+    current_lv_ka: float | None
+    #: The larger of the two winding currents as a percentage of its rated current.
+    loading_percent: float | None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class GeneratorResult:
+    generator_id: str
+    energized: bool
+    p_mw: float | None
+    q_mvar: float | None
+    #: voltage_control only: True when the unit sits at a reactive limit and therefore
+    #: does not hold its voltage set-point. None for constant_power units and when
+    #: de-energised.
+    reactive_limit_reached: bool | None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class ExternalGridResult:
     external_grid_id: str
     energized: bool
@@ -61,13 +92,19 @@ class PowerFlowTotals:
     #: Power supplied by all external grids.
     external_supply_mw: float
     external_supply_mvar: float
+    #: Power supplied by all energised generators.
+    generation_mw: float
+    generation_mvar: float
+    #: Active power set-points of in-service generators on de-energised buses: generation
+    #: that exists in the model but cannot feed in. Reported, never silently dropped.
+    unavailable_generation_mw: float
     #: Demand of in-service loads on energised buses.
     served_load_mw: float
     served_load_mvar: float
     #: Demand of in-service loads on de-energised buses. Reported, never silently dropped.
     unserved_load_mw: float
     unserved_load_mvar: float
-    #: Sum of line losses over energised lines.
+    #: Sum of the losses of energised lines and transformers.
     active_losses_mw: float
     reactive_losses_mvar: float
 
@@ -89,6 +126,8 @@ class PowerFlowResult:
     options: PowerFlowOptions
     buses: tuple[BusResult, ...] = ()
     lines: tuple[LineResult, ...] = ()
+    transformers: tuple[TransformerResult, ...] = ()
+    generators: tuple[GeneratorResult, ...] = ()
     external_grids: tuple[ExternalGridResult, ...] = ()
     totals: PowerFlowTotals | None = None
     #: In-service buses that no external grid can reach, sorted.

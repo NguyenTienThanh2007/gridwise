@@ -56,10 +56,19 @@ def assert_no_solution(result: PowerFlowResult) -> None:
     assert result.failure_code is ErrorCode.POWER_FLOW_NOT_CONVERGED
     assert result.buses == ()
     assert result.lines == ()
+    assert result.transformers == ()
+    assert result.generators == ()
     assert result.external_grids == ()
     assert result.totals is None
     assert result.unsupplied_bus_ids == ()
-    for part in (result.buses, result.lines, result.external_grids, result.totals):
+    for part in (
+        result.buses,
+        result.lines,
+        result.transformers,
+        result.generators,
+        result.external_grids,
+        result.totals,
+    ):
         assert not contains_number(part)
 
 
