@@ -2,15 +2,17 @@ import math
 from dataclasses import replace
 
 import pytest
-from grid_factories import three_bus_radial, two_bus
+from grid_factories import substation_feeder, switch, three_bus_radial, two_bus
 
 from gridwise_grid_engine import PowerFlowOptions, grid_hash, result_hash, run_power_flow
 from gridwise_grid_engine.adapters.pandapower_adapter import PandapowerSolver
 from gridwise_grid_engine.hashing import RESULT_HASH_DECIMALS
+from gridwise_grid_engine.reference_grids import cigre_mv
 
-# A regression value recorded on macOS arm64, not a validation of the physics. Whether
-# Linux x86-64 reproduces it is only known once CI has run this test there.
-TWO_BUS_RESULT_HASH = "b571c1b586c4f37692ea33faca9f701c348a3706ca96914021f5401519215664"
+# A regression value, not a validation of the physics. Regenerated on purpose in P1.2a:
+# the result document gained transformers, generators and generation totals (schema 2).
+# Recorded on macOS arm64; whether Linux x86-64 reproduces it is known once CI has run.
+TWO_BUS_RESULT_HASH = "4410eff3d872aa58e6128eb683614b05aded17fdbece1cc1ce7e3bd192986855"
 
 
 def test_identical_inputs_give_identical_result_hashes(solver: PandapowerSolver) -> None:
@@ -146,3 +148,53 @@ def test_negative_zero_and_zero_hash_the_same(solver: PandapowerSolver) -> None:
         buses=tuple(replace(bus, voltage_angle_degree=0.0) for bus in result.buses),
     )
     assert result_hash(flipped) == result_hash(zeroed)
+
+
+# --- transformers, generators and switches -----------------------------------------------
+
+# A regression value for a network with every element type (recorded on macOS arm64).
+CIGRE_RESULT_HASH = "988d097750399508dfafb5b35f63a0c49dc29edd4571211baeae222b941c283e"
+
+
+def test_the_benchmark_network_hash_is_stable_across_platforms(solver: PandapowerSolver) -> None:
+    assert result_hash(run_power_flow(cigre_mv.cigre_mv_with_der(), solver)) == CIGRE_RESULT_HASH
+
+
+def test_the_benchmark_network_solves_identically_every_time(solver: PandapowerSolver) -> None:
+    first = run_power_flow(cigre_mv.cigre_mv_with_der(), solver)
+    run_power_flow(two_bus(), solver)
+    second = run_power_flow(cigre_mv.cigre_mv_with_der(), PandapowerSolver())
+    assert first == replace(second, solver_name=first.solver_name)
+    assert result_hash(first) == result_hash(second)
+
+
+def test_order_of_the_new_element_types_does_not_change_either_hash(
+    solver: PandapowerSolver,
+) -> None:
+    grid = cigre_mv.cigre_mv_with_der()
+    shuffled = replace(
+        grid,
+        transformers=tuple(reversed(grid.transformers)),
+        generators=tuple(reversed(grid.generators)),
+        switches=tuple(reversed(grid.switches)),
+    )
+    assert grid_hash(shuffled) == grid_hash(grid)
+    assert result_hash(run_power_flow(shuffled, solver)) == result_hash(
+        run_power_flow(grid, solver)
+    )
+
+
+def test_every_new_input_is_part_of_the_grid_identity() -> None:
+    base = replace(substation_feeder(), switches=(switch("s", "a", "line", "ab"),))
+    transformer = base.transformers[0]
+    variants = [
+        replace(base, transformers=(replace(transformer, iron_losses_kw=14.5),)),
+        replace(base, transformers=(replace(transformer, phase_shift_degree=30.0),)),
+        replace(base, transformers=(replace(transformer, in_service=False),)),
+        replace(base, switches=(replace(base.switches[0], closed=False),)),
+        replace(base, switches=(replace(base.switches[0], kind="circuit_breaker"),)),
+        replace(base, switches=()),
+    ]
+    hashes = {grid_hash(variant) for variant in variants}
+    assert len(hashes) == len(variants)
+    assert grid_hash(base) not in hashes

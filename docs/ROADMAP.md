@@ -26,7 +26,7 @@ All ten criteria passed. Criterion 7 was met on pull request 1 (head `7773bdd`) 
 Architecture: [decision 0007](decisions/0007-p1-grid-engine-architecture.md). Model and
 limits: [docs/domain/grid-engine.md](domain/grid-engine.md).
 
-### P1.1 — Engine scaffold (implementation complete; pending CI verification and merge)
+### P1.1 — Engine scaffold (merged, pull request 7)
 
 Bus, Line, Load and ExternalGrid; validation with stable error codes; AC Newton-Raphson
 power flow through a pandapower adapter; typed results; input and result hashes.
@@ -42,11 +42,40 @@ power flow through a pandapower adapter; typed results; input and result hashes.
 | 7   | Engine tests run on Linux in CI and the API image builds with the solver stack           | CI job "Grid engine"                |
 | 8   | All P0 checks still pass                                                                 | CI jobs API, Web, End to end, Audit |
 
+All eight criteria passed on pull request 7 and on `main` (`930c5b7`), including the hash
+regression on Linux x86-64.
+
 ### P1.2 — Persistence and grid API
 
-Transformers, generators and switches in the model; `grid` schema with constraints,
-policies and grants; development tenant context; grid and topology endpoints; the
-deterministic synthetic demo grid; multi-bus reference validation.
+Delivered as three pull requests, each reviewable alone. Design: decision 0007 and the
+"P1.2 design decisions" section in it.
+
+#### P1.2a — Engine: transformers, generators, switches (implementation complete; pending review, CI verification and merge)
+
+| #   | Acceptance criterion                                                                                   | Evidence                                            |
+| --- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------- |
+| 1   | Transformer impedance, ratio, taps and no-load power match closed-form solutions                       | `test_transformer.py`                               |
+| 2   | Constant-power and voltage-controlled generators, with and without reactive limits, match closed forms | `test_generator.py`                                 |
+| 3   | On nine buses the solution satisfies the power flow equations, checked without a solver                | `test_reference_networks.py`                        |
+| 4   | The shipped CIGRE MV benchmark equals pandapower's copy, in data and in results                        | `test_reference_networks.py`                        |
+| 5   | Every new validation rule has a documented stable code and a test                                      | `test_validation_extended.py`, `test_validation.py` |
+| 6   | Open switches de-energise or open-end elements as defined; de-energised elements carry no values       | `test_switches.py`                                  |
+| 7   | A faulty solution for the new elements is rejected, not returned                                       | `test_solution_checks_extended.py`                  |
+| 8   | The import boundary still holds                                                                        | `test_import_boundary.py`                           |
+| 9   | All P0 and P1.1 checks still pass                                                                      | CI                                                  |
+
+Deviation from the plan: criterion 3 was planned as a comparison with published `case9`
+results. No citable table could be retrieved, so it is an equation check instead; see
+`docs/domain/grid-engine.md`, "Reference networks".
+
+#### P1.2b — Database (not started)
+
+`grid` schema with constraints, policies and grants; tenant transaction helper; development
+tenant setting; seed command for the synthetic demo grid; isolation tests.
+
+#### P1.2c — API (not started)
+
+Grid, topology and asset endpoints; strict schemas; optimistic concurrency.
 
 ### P1.3 — Simulation
 

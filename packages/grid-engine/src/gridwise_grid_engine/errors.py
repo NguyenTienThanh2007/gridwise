@@ -42,6 +42,36 @@ class ErrorCode(StrEnum):
     INVALID_EXTERNAL_GRID_VOLTAGE = "invalid_external_grid_voltage"
     MULTIPLE_EXTERNAL_GRIDS_ON_BUS = "multiple_external_grids_on_bus"
 
+    # --- transformer ---
+    TRANSFORMER_CONNECTS_BUS_TO_ITSELF = "transformer_connects_bus_to_itself"
+    TRANSFORMER_VOLTAGE_MISMATCH = "transformer_voltage_mismatch"
+    INVALID_TRANSFORMER_RATED_POWER = "invalid_transformer_rated_power"
+    INVALID_TRANSFORMER_RATED_VOLTAGE = "invalid_transformer_rated_voltage"
+    INVALID_TRANSFORMER_SHORT_CIRCUIT_VOLTAGE = "invalid_transformer_short_circuit_voltage"
+    NEGATIVE_TRANSFORMER_IRON_LOSSES = "negative_transformer_iron_losses"
+    INVALID_TRANSFORMER_NO_LOAD_CURRENT = "invalid_transformer_no_load_current"
+    INVALID_TAP_CHANGER = "invalid_tap_changer"
+
+    # --- generator ---
+    NEGATIVE_GENERATOR_ACTIVE_POWER = "negative_generator_active_power"
+    INVALID_GENERATOR_CONTROL_MODE = "invalid_generator_control_mode"
+    INVALID_GENERATOR_PARAMETERS = "invalid_generator_parameters"
+    INVALID_GENERATOR_VOLTAGE_SETPOINT = "invalid_generator_voltage_setpoint"
+    INVALID_GENERATOR_REACTIVE_LIMITS = "invalid_generator_reactive_limits"
+    INVALID_GENERATOR_RATED_POWER = "invalid_generator_rated_power"
+    GENERATOR_EXCEEDS_RATED_POWER = "generator_exceeds_rated_power"
+    MULTIPLE_VOLTAGE_CONTROLLERS_ON_BUS = "multiple_voltage_controllers_on_bus"
+
+    # --- switch ---
+    INVALID_SWITCH_STATE = "invalid_switch_state"
+    INVALID_SWITCH_ELEMENT_TYPE = "invalid_switch_element_type"
+    INVALID_SWITCH_KIND = "invalid_switch_kind"
+    UNKNOWN_SWITCH_TARGET = "unknown_switch_target"
+    SWITCH_NOT_AT_ELEMENT_TERMINAL = "switch_not_at_element_terminal"
+    SWITCH_CONNECTS_BUS_TO_ITSELF = "switch_connects_bus_to_itself"
+    SWITCH_VOLTAGE_MISMATCH = "switch_voltage_mismatch"
+    DUPLICATE_SWITCH = "duplicate_switch"
+
     # --- solving ---
     POWER_FLOW_NOT_CONVERGED = "power_flow_not_converged"
     SOLVER_FAILED = "solver_failed"

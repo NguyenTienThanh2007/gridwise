@@ -6,11 +6,12 @@ distribution networks. Phases and acceptance criteria are in `docs/ROADMAP.md`.
 ## Current state
 
 - **P0 (foundation) is merged** (PR 1). All four CI jobs passed on the PR and on `main`.
-- **P1.1 (grid engine scaffold):** implementation complete; pending CI verification and
-  merge. Model, validation, pandapower adapter, power flow for Bus / Line / Load /
-  ExternalGrid.
-- **Next:** P1.2 persistence and grid API (decision 0007). Do not start a milestone without
-  owner approval.
+- **P1.1 (grid engine scaffold) is merged** (PR 7): model, validation, pandapower adapter,
+  power flow for Bus / Line / Load / ExternalGrid.
+- **P1.2a (engine: Transformer, Generator, Switch, CIGRE MV benchmark):** implementation
+  complete; pending review, CI verification and merge.
+- **Next:** P1.2b database (`grid` schema, tenant context, seed), then P1.2c API. Plan and
+  decisions D1–D6: decision 0007. Do not start a milestone without owner approval.
 
 ## Hard boundaries
 

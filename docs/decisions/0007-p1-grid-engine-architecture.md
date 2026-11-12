@@ -2,6 +2,8 @@
 
 - Status: accepted (P1 planning, 2026-11-12). P1.1 implements the parts marked **done**;
   the rest is the agreed direction for P1.2–P1.4 and is confirmed when each starts.
+- Amended 2026-11-12 for P1.2: see [P1.2 design decisions](#p12-design-decisions). Decision 4
+  and the out-of-scope list are narrowed there.
 
 ## Context
 
@@ -61,6 +63,8 @@ have finite values, de-energised ones have none, and supply equals served load p
 A solution that fails is rejected (`inconsistent_solution`), not returned. This check found
 a real modelling difference during P1.1 (an in-service line on an out-of-service bus), which
 is now defined explicitly: an out-of-service bus takes its attached elements with it.
+Since P1.2a the checks also cover transformers and generators: a generator must deliver its
+set-points, and a voltage-controlled one must hold its voltage or sit at a reactive limit.
 
 ### 5. Non-convergence is an outcome, not an exception — done
 
@@ -113,10 +117,14 @@ written in one transaction, so a run never has partial results.
 
 ### 10. Validation against references
 
-- **Done:** closed-form two-bus solutions and no-load line charging, to 1e-9 pu.
-- **P1.2/P1.3:** once transformers and generators exist, networks built through the
-  GRIDWISE model are compared with pandapower's own benchmark networks and with published
-  solutions, with tolerances stated per quantity.
+- **Done (P1.1):** closed-form two-bus solutions and no-load line charging, to 1e-9 pu.
+- **Done (P1.2a):** closed forms for the transformer (series impedance, ratio and taps,
+  no-load power) and for both generator modes including reactive limits; switch
+  equivalences; on nine buses (`case9`) the solution is put back into the power flow
+  equations without a solver; the CIGRE MV benchmark and `case9` built through the GRIDWISE
+  model equal pandapower's own copies in data and results.
+- **Not done:** comparison with a printed table of published results. No citable table
+  could be retrieved, and none is quoted from memory. The equation check replaces it.
 
 ### 11. Compatibility with later phases
 
@@ -136,7 +144,36 @@ written in one transaction, so a run never has partial results.
 - numba is not installed. pandapower runs without it and prints a notice on import; solve
   times above are without numba.
 
+## P1.2 design decisions
+
+Approved 2026-11-12 with the P1.2 plan.
+
+| #   | Decision                                                                                                                                                                                             | Status          |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- |
+| D1  | A line or transformer with an open switch at one end stays energised from the other end (charging current, no-load power). The out-of-service-bus rule of decision 4 is unchanged and applies first. | done (P1.2a)    |
+| D2  | Reactive limits of voltage-controlled generators are enforced by the solver; a limited unit is flagged in the result and no longer holds its set-point.                                              | done (P1.2a)    |
+| D3  | Through the API, single elements can change operating state and name only (`in_service`, switch `closed`). Electrical parameters change by replacing the whole topology.                             | P1.2c           |
+| D4  | Every stored grid passes engine validation; a grid is created together with its topology.                                                                                                            | P1.2c           |
+| D5  | Optimistic concurrency: a grid `version`, `ETag`, and a required `If-Match` on writes.                                                                                                               | P1.2b and P1.2c |
+| D6  | Buses carry optional schematic diagram coordinates in the database. They are not part of the electrical model or of the grid hash.                                                                   | P1.2b           |
+
+Further decisions made while implementing P1.2a:
+
+- **One `Generator` type with a control mode** (`constant_power`, `voltage_control`) rather
+  than two types. A field that belongs to the other mode is an error, not ignored.
+- **One voltage reference per bus.** A voltage-controlled generator may not share a bus with
+  an external grid or with another voltage-controlled generator, even at the same
+  set-point: how reactive power would be shared between them is not defined by the model.
+  This is stricter than the plan, which only excluded differing set-points.
+- **Generators do not energise an island.** Only an external grid provides a reference.
+- **No invented plausibility bounds.** A transformer's rated voltages may differ from the
+  bus voltages by any amount as long as HV exceeds LV.
+- **The demonstration network is the CIGRE MV benchmark** with distributed generation, as
+  literal data in the engine package. A test compares it with pandapower's copy, so its
+  values are published ones and none is invented.
+- **Hash schemas moved to version 2** (grid and result). No hash was stored anywhere yet.
+
 ## Out of scope for P1
 
-Battery storage, unbalanced calculation, per-element editing, authentication, message
-brokers, forecasting and 3D rendering.
+Battery storage, unbalanced calculation, editing the electrical parameters of single
+elements (D3), authentication, message brokers, forecasting and 3D rendering.

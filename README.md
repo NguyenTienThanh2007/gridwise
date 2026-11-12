@@ -11,10 +11,15 @@ optimising electrical distribution networks.
 
 **P0 (foundation) is merged.** All four CI jobs pass on `main`.
 
-**P1.1 (grid engine scaffold): implementation complete; pending CI verification and merge.**
-It adds a pure Python engine that solves the balanced AC power flow of a network of buses,
-lines, loads and an external grid. It is not connected to the API, the database or the web
-app yet. See [docs/ROADMAP.md](docs/ROADMAP.md).
+**P1.1 (grid engine scaffold) is merged**: a pure Python engine that solves the balanced AC
+power flow of a network of buses, lines, loads and an external grid.
+
+**P1.2a (transformers, generators and switches in the engine): implementation complete;
+pending review, CI verification and merge.** It also ships the CIGRE medium-voltage
+benchmark as a synthetic demonstration network.
+
+The engine is not connected to the API, the database or the web app yet. See
+[docs/ROADMAP.md](docs/ROADMAP.md).
 
 What works today:
 

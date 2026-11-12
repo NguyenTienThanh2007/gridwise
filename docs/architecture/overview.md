@@ -27,10 +27,10 @@ browser ──HTTP──▶ web (Next.js 16)
 | Local stack | `docker-compose.yml`        | postgres → migrate → api (default); web (profile `web`) |
 | CI          | `.github/workflows/ci.yml`  | API, web, end-to-end and dependency-audit jobs          |
 
-### Grid engine (P1.1)
+### Grid engine (P1.1, P1.2a)
 
 `packages/grid-engine` is a library, not a service. Nothing calls it at runtime yet: the
-API, database and web app are unchanged by P1.1.
+API, database and web app are unchanged by P1.1 and P1.2a.
 
 ```
 GridModel ─▶ validate ─▶ energisation ─▶ PowerFlowSolver ─▶ consistency checks ─▶ PowerFlowResult
@@ -38,7 +38,9 @@ GridModel ─▶ validate ─▶ energisation ─▶ PowerFlowSolver ─▶ cons
                                   adapters/pandapower_adapter
 ```
 
-- Plain Python domain model (Bus, Line, Load, ExternalGrid) with units in field names.
+- Plain Python domain model (Bus, Line, Transformer, Load, Generator, ExternalGrid, Switch)
+  with units in field names.
+- Switches are states of the simulated network. Nothing sends them to equipment.
 - Only the adapter imports pandapower; the API package may never import the adapter.
 - A non-converged solve returns no values; de-energised elements are `None`, never zero.
 

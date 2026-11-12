@@ -47,6 +47,23 @@ class RawLine:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class RawTransformer:
+    p_hv_mw: float
+    q_hv_mvar: float
+    p_lv_mw: float
+    q_lv_mvar: float
+    current_hv_ka: float
+    current_lv_ka: float
+    loading_percent: float
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class RawGenerator:
+    p_mw: float
+    q_mvar: float
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class RawExternalGrid:
     p_mw: float
     q_mvar: float
@@ -63,6 +80,8 @@ class RawSolution:
     buses: Mapping[str, RawBus] = field(default_factory=dict)
     lines: Mapping[str, RawLine] = field(default_factory=dict)
     external_grids: Mapping[str, RawExternalGrid] = field(default_factory=dict)
+    transformers: Mapping[str, RawTransformer] = field(default_factory=dict)
+    generators: Mapping[str, RawGenerator] = field(default_factory=dict)
 
 
 class PowerFlowSolver(Protocol):

@@ -19,7 +19,7 @@ import json
 from dataclasses import asdict
 from typing import Any
 
-from gridwise_grid_engine.model import GridModel
+from gridwise_grid_engine.model import ELEMENT_GROUPS, GridModel
 from gridwise_grid_engine.results import PowerFlowResult
 
 RESULT_HASH_DECIMALS = 6
@@ -51,9 +51,9 @@ def _canonical_input(value: Any) -> Any:
 
 def grid_hash(grid: GridModel) -> str:
     document = _canonical_input(asdict(grid))
-    for group in ("buses", "lines", "loads", "external_grids"):
+    for group in ELEMENT_GROUPS:
         document[group] = _by_id(document[group], "id")
-    return _digest({"schema": "gridwise.grid/1", "grid": document})
+    return _digest({"schema": "gridwise.grid/2", "grid": document})
 
 
 def _normalise(value: Any) -> Any:
@@ -71,12 +71,14 @@ def _normalise(value: Any) -> Any:
 
 def result_hash(result: PowerFlowResult) -> str:
     document = {
-        "schema": "gridwise.power-flow-result/1",
+        "schema": "gridwise.power-flow-result/2",
         "grid_hash": result.grid_hash,
         "converged": result.converged,
         "failure_code": result.failure_code.value if result.failure_code else None,
         "buses": _by_id([asdict(item) for item in result.buses], "bus_id"),
         "lines": _by_id([asdict(item) for item in result.lines], "line_id"),
+        "transformers": _by_id([asdict(item) for item in result.transformers], "transformer_id"),
+        "generators": _by_id([asdict(item) for item in result.generators], "generator_id"),
         "external_grids": _by_id(
             [asdict(item) for item in result.external_grids], "external_grid_id"
         ),
