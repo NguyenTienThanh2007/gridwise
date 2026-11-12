@@ -11,10 +11,18 @@ WORKDIR /src
 # Dependencies first, so source edits do not invalidate this layer.
 COPY pyproject.toml uv.lock .python-version ./
 COPY apps/api/pyproject.toml apps/api/pyproject.toml
+COPY packages/grid-engine/pyproject.toml packages/grid-engine/pyproject.toml
 RUN uv sync --frozen --no-dev --no-install-workspace --package gridwise-api
 
 COPY apps/api apps/api
+COPY packages/grid-engine packages/grid-engine
 RUN uv sync --frozen --no-dev --no-editable --package gridwise-api
+
+# The scientific packages ship their own test suites (about 90 MB). Nothing imports them
+# at runtime; the image's self-check and the end-to-end job verify that after this step.
+RUN for package in scipy pandas numpy networkx pandapower; do \
+      find "/opt/venv/lib/python3.13/site-packages/$package" -type d \( -name tests -o -name test \) -prune -exec rm -rf {} + ; \
+    done
 
 
 FROM python:3.13-slim AS runtime

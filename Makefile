@@ -14,7 +14,7 @@ API_PORT ?= $(or $(call env_value,API_PORT),8020)
 WEB_PORT ?= $(or $(call env_value,WEB_PORT),3100)
 
 .PHONY: help setup up up-web down reset-db migrate dev-api dev-web fmt lint typecheck \
-        test test-integration test-e2e audit check
+        test test-engine test-integration test-e2e audit check
 
 help: ## List the available commands
 	@grep -E '^[a-zA-Z_-]+:.*## ' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "  %-18s %s\n", $$1, $$2}'
@@ -60,9 +60,15 @@ typecheck: ## Static type checks
 	uv run mypy
 	pnpm typecheck
 
-test: ## Unit tests (no services needed)
+test: ## Unit tests: API, grid engine and web (no services needed)
 	uv run pytest -m "not integration"
 	pnpm test
+
+# The source path is explicit so the command does not depend on the virtualenv's
+# editable-install .pth file, which macOS can hide (docs/development/setup.md, Gotchas).
+test-engine: ## Grid engine tests and its closed-form self-check
+	uv run pytest packages/grid-engine/tests
+	PYTHONPATH=packages/grid-engine/src uv run python -m gridwise_grid_engine.selfcheck
 
 test-integration: ## Database tests; each uses its own throwaway database
 	uv run pytest -m integration

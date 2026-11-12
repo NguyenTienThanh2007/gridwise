@@ -22,9 +22,19 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "@eslint/js"
         update-types: ["version-update:semver-major"]
+      # Type definitions must match the Node 24 runtime.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: docker
     directory: /infrastructure/docker
     schedule: { interval: weekly }
+    ignore:
+      # Runtimes are chosen by decision record, not by bot (docs/decisions/0002):
+      # Python 3.13 (a "minor" bump such as 3.14 is a new Python release) and Node 24 LTS.
+      - dependency-name: python
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: node
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: docker-compose
     directory: /
     schedule: { interval: weekly }

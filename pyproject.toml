@@ -3,7 +3,7 @@ name = "gridwise"
 version = "0.1.0"
 description = "GRIDWISE workspace root (not a distributable package)."
 requires-python = ">=3.13,<3.14"
-dependencies = ["gridwise-api"]
+dependencies = ["gridwise-api", "gridwise-grid-engine"]
 
 [dependency-groups]
 dev = [
@@ -20,9 +20,10 @@ package = false
 
 [tool.uv.sources]
 gridwise-api = { workspace = true }
+gridwise-grid-engine = { workspace = true }
 
 [tool.uv.workspace]
-members = ["apps/api"]
+members = ["apps/api", "packages/grid-engine"]
 
 [tool.ruff]
 line-length = 100
@@ -35,23 +36,37 @@ select = ["E", "F", "W", "I", "B", "UP", "N", "S", "C4", "SIM", "RUF", "ASYNC", 
 [tool.ruff.lint.per-file-ignores]
 "**/tests/**" = ["S101"]
 "**/migrations/**" = ["N999"]
+# A command-line smoke test: printing is its output.
+"**/selfcheck.py" = ["T20"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["gridwise_api"]
+known-first-party = ["gridwise_api", "gridwise_grid_engine"]
 
 [tool.mypy]
 python_version = "3.13"
 strict = true
 plugins = ["pydantic.mypy"]
-files = ["apps/api/src", "apps/api/tests", "apps/api/migrations"]
-mypy_path = ["apps/api/src", "apps/api"]
+files = [
+    "apps/api/src",
+    "apps/api/tests",
+    "apps/api/migrations",
+    "packages/grid-engine/src",
+    "packages/grid-engine/tests",
+]
+mypy_path = ["apps/api/src", "apps/api", "packages/grid-engine/src"]
 explicit_package_bases = true
 
+[[tool.mypy.overrides]]
+# pandapower ships no type information. It is imported in exactly one module (the adapter),
+# which converts every value to a typed Python object before returning it.
+module = ["pandapower", "pandapower.*"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
-testpaths = ["apps/api/tests"]
+testpaths = ["apps/api/tests", "packages/grid-engine/tests"]
 # Explicit, so tests do not depend on the editable-install .pth file: macOS can flag that
 # file hidden, and Python 3.13 ignores hidden .pth files.
-pythonpath = ["apps/api/src", "apps/api"]
+pythonpath = ["apps/api/src", "apps/api", "packages/grid-engine/src"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 addopts = "-ra --strict-markers --strict-config"

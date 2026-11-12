@@ -1,0 +1,16 @@
+[project]
+name = "gridwise-grid-engine"
+version = "0.1.0"
+description = "GRIDWISE grid domain engine: electrical model, validation and power flow."
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    # 3.5.x only: it constrains pandas (~=2.3) and numpy (<2.5) for the whole workspace.
+    "pandapower>=3.5.6,<3.6",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/gridwise_grid_engine"]

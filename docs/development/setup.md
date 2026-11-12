@@ -43,6 +43,7 @@ If you change a port, also update the three database URLs,
 | `make lint`             | ruff format check, ruff, Prettier check, ESLint                         | nothing   |
 | `make typecheck`        | mypy (strict), tsc                                                      | nothing   |
 | `make test`             | Python and web unit tests                                               | nothing   |
+| `make test-engine`      | Grid engine tests and its closed-form self-check                        | nothing   |
 | `make test-integration` | Migration and readiness tests against real PostgreSQL                   | `make up` |
 | `make test-e2e`         | Builds the web app, runs Playwright against it and the API              | `make up` |
 | `make check`            | lint, typecheck, test, test-integration, web build, bundle secret check | `make up` |

@@ -30,6 +30,15 @@ are declared as exact versions and fixed by `pnpm-lock.yaml`.
   typescript-eslint (development tooling only). Remove the override in
   `pnpm-workspace.yaml` once typescript-eslint depends on a patched release.
 
+## Runtime upgrades are decisions, not bot updates
+
+Dependabot ignores new Python releases for the container base image (3.14 and later, which
+it classes as minor or major bumps), new Node majors for the base image, and `@types/node`
+majors. Moving off Python 3.13 or Node 24 means updating `requires-python`,
+`.python-version`, the images, CI and this record together. The first Dependabot run
+proposed Python 3.15, Node 25 and Node 26 images; the Python one failed CI because the
+project requires 3.13.
+
 ## Upgrade policy
 
 - Dependabot opens weekly grouped minor and patch updates. TypeScript and ESLint majors are

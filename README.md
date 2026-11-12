@@ -9,9 +9,12 @@ optimising electrical distribution networks.
 
 ## Status
 
-**P0 (foundation) is implemented.** There is no grid model, telemetry, analytics, forecasting
-or 3D twin yet; those routes exist as labelled placeholders. See
-[docs/ROADMAP.md](docs/ROADMAP.md).
+**P0 (foundation) is merged.** All four CI jobs pass on `main`.
+
+**P1.1 (grid engine scaffold): implementation complete; pending CI verification and merge.**
+It adds a pure Python engine that solves the balanced AC power flow of a network of buses,
+lines, loads and an external grid. It is not connected to the API, the database or the web
+app yet. See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 What works today:
 
@@ -20,10 +23,13 @@ What works today:
 - PostgreSQL 18 with an Alembic baseline migration (`core.organizations`, the tenant table)
   and separate owner and runtime database roles.
 - Next.js app shell with the ten product routes and a dashboard that shows live API and
-  database status.
-- Docker Compose stack, Makefile and dependency audit.
-- A CI workflow and Dependabot configuration are written but **have not run yet**: the
-  branch has not been pushed.
+  database status. The grid, simulation and analytics routes are labelled placeholders.
+- Grid engine library (`packages/grid-engine`): electrical model with validation and stable
+  error codes, AC Newton-Raphson power flow through pandapower, checked against closed-form
+  solutions. Its limits are listed in [docs/domain/grid-engine.md](docs/domain/grid-engine.md).
+- Docker Compose stack, Makefile, GitHub Actions CI, dependency audit and Dependabot.
+
+There is no telemetry, analytics, forecasting or 3D twin yet.
 
 ## Quick start
 
@@ -54,19 +60,20 @@ make audit      # dependency vulnerability scan
 ```
 apps/api/             FastAPI service, Alembic migrations, tests
 apps/web/             Next.js app, unit tests, Playwright end-to-end tests
+packages/grid-engine/ Electrical model, validation and power flow (no HTTP, no database)
 infrastructure/docker Dockerfiles
 docs/                 Architecture, decisions, development, security, roadmap
 docker-compose.yml    Local stack
 Makefile              All developer commands
 ```
 
-Packages for the grid engine, data platform and forecasting are added in the phase that
-implements them.
+Packages for the data platform and forecasting are added in the phase that implements them.
 
 ## Documentation
 
 - [Architecture overview](docs/architecture/overview.md)
 - [Decision records](docs/decisions/)
+- [Grid engine: model, equations and limits](docs/domain/grid-engine.md)
 - [Safety boundary and data provenance](docs/security/safety-boundary.md)
 - [Development setup](docs/development/setup.md)
 - [Roadmap and acceptance criteria](docs/ROADMAP.md)

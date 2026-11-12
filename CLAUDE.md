@@ -5,9 +5,12 @@ distribution networks. Phases and acceptance criteria are in `docs/ROADMAP.md`.
 
 ## Current state
 
-- **P0 (foundation) is implemented** on branch `feat/p0-foundation` and remediated after an
-  independent review. Not committed; GitHub CI has never run.
-- **Next:** P1 grid domain engine. Do not start it without owner approval.
+- **P0 (foundation) is merged** (PR 1). All four CI jobs passed on the PR and on `main`.
+- **P1.1 (grid engine scaffold):** implementation complete; pending CI verification and
+  merge. Model, validation, pandapower adapter, power flow for Bus / Line / Load /
+  ExternalGrid.
+- **Next:** P1.2 persistence and grid API (decision 0007). Do not start a milestone without
+  owner approval.
 
 ## Hard boundaries
 
@@ -16,6 +19,8 @@ distribution networks. Phases and acceptance criteria are in `docs/ROADMAP.md`.
 - Never present synthetic data as measured. Every grid and measurement carries provenance.
 - Never convert missing telemetry to zero.
 - Do not invent electrical formulas or parameters; use pandapower and cited sources.
+- A failed or non-converged power flow returns no values. De-energised elements are `None`,
+  never zero. Never weaken the engine's consistency checks to make a result pass.
 
 ## Architecture (one screen)
 
@@ -26,6 +31,11 @@ distribution networks. Phases and acceptance criteria are in `docs/ROADMAP.md`.
   same change bumps `EXPECTED_SCHEMA_REVISION` (decision 0006, `docs/development/setup.md`).
 - Database roles: API = `gridwise_app` (no superuser, no BYPASSRLS, owns nothing);
   migrations = `gridwise_owner`; `postgres` superuser only for integration tests.
+- `packages/grid-engine`: pure domain engine (dataclasses, no Pydantic, no HTTP, no SQL).
+  ONLY `adapters/pandapower_adapter.py` may import pandapower, pandas, numpy or scipy;
+  `apps/api` must never import the adapter. Both are enforced by tests. Entry point:
+  `run_power_flow(grid, solver)`. Model, equations, error codes and limits:
+  `docs/domain/grid-engine.md`.
 - `apps/web`: Next.js 16 app shell. Placeholder routes show no data until the backend has it.
 - One PostgreSQL 18 server on the TimescaleDB image. Schemas by domain; add each new schema
   to `MANAGED_SCHEMAS` in `models/base.py`.
@@ -41,6 +51,7 @@ make setup                 # .env + uv sync + pnpm install
 make up                    # postgres + migrate + api (waits for health)
 make check                 # lint, typecheck, unit + integration tests, web build (needs `make up`)
 make test-e2e              # Playwright (needs `make up`)
+make test-engine           # grid engine tests + closed-form self-check
 make audit                 # pip-audit + pnpm audit
 ```
 
@@ -65,4 +76,8 @@ make audit                 # pip-audit + pnpm audit
 - `make` does not export `.env`; the web build must never see database credentials
   (`pnpm check:bundle` enforces it).
 - Old local database volume without roles: `make reset-db && make up`.
+- Engine error codes are a contract: never rename one; add new ones to the enum, the
+  frozen-list test and the table in `docs/domain/grid-engine.md`.
+- pandapower pins pandas ~2.3 and numpy <2.5 for the whole workspace; it prints a numba
+  notice on import, which is expected (numba is not installed).
 - MinIO is unavailable as specified in the brief; the object store is chosen in P2.
