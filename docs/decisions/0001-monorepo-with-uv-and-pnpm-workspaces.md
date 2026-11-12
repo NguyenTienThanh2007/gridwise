@@ -10,7 +10,7 @@ platform and forecasting, reproducible local development and pinned dependencies
 ## Decision
 
 - **Python:** one uv workspace rooted at the repository, one committed `uv.lock`. Members
-  are added when they contain code; P0 has `apps/api` only.
+  are added when they contain code: `apps/api` (P0) and `packages/grid-engine` (P1.1).
 - **Node:** one pnpm workspace, one committed `pnpm-lock.yaml`. P0 has `apps/web` only.
 - **Airflow and dbt** (P3) get their own isolated environments and images. They are never
   members of the application lockfile, because their dependency constraints (their own
@@ -23,6 +23,6 @@ platform and forecasting, reproducible local development and pinned dependencies
 ## Consequences
 
 - One resolution per language: packages cannot drift onto incompatible versions.
-- pandapower currently requires `pandas~=2.3` and `numpy<2.5`. When `grid-engine` joins the
-  workspace in P1, the whole Python workspace stays on pandas 2.3 until pandapower moves.
+- pandapower requires `pandas~=2.3` and `numpy<2.5`. Since `grid-engine` joined the
+  workspace in P1.1, the whole Python workspace stays on those until pandapower moves.
 - Directories from the brief's structure appear only when a phase puts code in them.

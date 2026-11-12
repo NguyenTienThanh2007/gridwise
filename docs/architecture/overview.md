@@ -9,7 +9,7 @@ This document separates what exists today from what is planned. Planned parts ar
 not commitments to a specific implementation; each is confirmed by a decision record when its
 phase starts.
 
-## What exists (P0)
+## What exists (P0 and P1.1)
 
 ```
 browser ──HTTP──▶ web (Next.js 16)
@@ -26,6 +26,24 @@ browser ──HTTP──▶ web (Next.js 16)
 | Web         | `apps/web`                  | App shell, ten routes, live platform status             |
 | Local stack | `docker-compose.yml`        | postgres → migrate → api (default); web (profile `web`) |
 | CI          | `.github/workflows/ci.yml`  | API, web, end-to-end and dependency-audit jobs          |
+
+### Grid engine (P1.1)
+
+`packages/grid-engine` is a library, not a service. Nothing calls it at runtime yet: the
+API, database and web app are unchanged by P1.1.
+
+```
+GridModel ─▶ validate ─▶ energisation ─▶ PowerFlowSolver ─▶ consistency checks ─▶ PowerFlowResult
+                                              ▲
+                                  adapters/pandapower_adapter
+```
+
+- Plain Python domain model (Bus, Line, Load, ExternalGrid) with units in field names.
+- Only the adapter imports pandapower; the API package may never import the adapter.
+- A non-converged solve returns no values; de-energised elements are `None`, never zero.
+
+Details: [grid-engine.md](../domain/grid-engine.md) and
+[decision 0007](../decisions/0007-p1-grid-engine-architecture.md).
 
 ### API layering
 
@@ -91,7 +109,7 @@ forecasting (reads gold; writes model metadata, evaluations and forecasts)
 
 | Phase | Adds                                                                                | Compose profile     |
 | ----- | ----------------------------------------------------------------------------------- | ------------------- |
-| P1    | `packages/grid-engine`, `grid` and `sim` schemas, deterministic scenarios           | default             |
+| P1    | Grid engine (P1.1 exists), `grid` and `sim` schemas, deterministic scenarios        | default             |
 | P2    | `packages/shared` contracts, telemetry simulator, Redpanda, ingestion, object store | `streaming`, `lake` |
 | P3    | dbt transformations, Airflow orchestration, gold KPIs                               | `orchestration`     |
 | P4    | `packages/forecasting`: baselines, backtests, anomaly and overload risk             | none                |

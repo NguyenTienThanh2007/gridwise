@@ -3,7 +3,7 @@
 A phase starts only after the previous one is verified. Results are reported as
 PASS / FAIL / BLOCKED / NOT RUN, and never claimed without being executed.
 
-## P0 — Foundation (implemented and remediated after review; CI not yet run)
+## P0 — Foundation (merged; CI green on `main`)
 
 | #   | Acceptance criterion                                                            | Evidence                                          |
 | --- | ------------------------------------------------------------------------------- | ------------------------------------------------- |
@@ -18,23 +18,45 @@ PASS / FAIL / BLOCKED / NOT RUN, and never claimed without being executed.
 | 9   | No secrets committed; configuration loads through one validated settings module | `config.py`, `test_config.py`, `.gitignore`       |
 | 10  | A new developer can follow the README to a running stack                        | `README.md`, `docs/development/setup.md`          |
 
-Status of each criterion is recorded in the P0 pull request, not here.
+All ten criteria passed. Criterion 7 was met on pull request 1 (head `7773bdd`) and again on
+`main` (`f4785cd`): API, Web, End to end and Dependency audit all succeeded.
 
-## P1 — Grid domain engine
+## P1 — Grid engine
 
-Domain entities, network topology, pandapower integration, power-flow calculations and the
-six deterministic scenarios (normal operation, rising industrial demand, transformer
-overload, feeder outage, renewable increase, battery charge and discharge).
+Architecture: [decision 0007](decisions/0007-p1-grid-engine-architecture.md). Model and
+limits: [docs/domain/grid-engine.md](domain/grid-engine.md).
 
-Draft acceptance criteria (confirmed at phase start):
+### P1.1 — Engine scaffold (implementation complete; pending CI verification and merge)
 
-- `packages/grid-engine` has no HTTP, database or frontend imports (enforced by a test).
-- Network parameters come from pandapower standard types or a cited public benchmark network.
-- Power-flow results match pandapower's own results for a published reference network.
-- Same network, scenario and seed give identical results, verified by a stored fixture.
-- Topology and parameter validation rejects islands, missing slack and out-of-range values
-  with specific errors; non-convergence is reported, never hidden.
-- Model assumptions and limitations are documented in `docs/domain/`.
+Bus, Line, Load and ExternalGrid; validation with stable error codes; AC Newton-Raphson
+power flow through a pandapower adapter; typed results; input and result hashes.
+
+| #   | Acceptance criterion                                                                     | Evidence                            |
+| --- | ---------------------------------------------------------------------------------------- | ----------------------------------- |
+| 1   | A two-bus network matches an independently derived closed-form solution                  | `test_two_bus_analytic.py`          |
+| 2   | Identical inputs give identical normalised result hashes                                 | `test_determinism.py`               |
+| 3   | Only the adapter imports pandapower; the engine imports no web or database library       | `test_import_boundary.py`           |
+| 4   | Missing slack, zero-length lines and invalid voltages are rejected with documented codes | `test_validation.py`                |
+| 5   | A non-converged power flow returns no values, including right after a successful one     | `test_non_convergence.py`           |
+| 6   | De-energised elements have no values and lost load is reported                           | `test_topology.py`                  |
+| 7   | Engine tests run on Linux in CI and the API image builds with the solver stack           | CI job "Grid engine"                |
+| 8   | All P0 checks still pass                                                                 | CI jobs API, Web, End to end, Audit |
+
+### P1.2 — Persistence and grid API
+
+Transformers, generators and switches in the model; `grid` schema with constraints,
+policies and grants; development tenant context; grid and topology endpoints; the
+deterministic synthetic demo grid; multi-bus reference validation.
+
+### P1.3 — Simulation
+
+The five scenarios (normal operation, demand increase, transformer overload, feeder outage,
+renewable generation); run lifecycle on a process pool; `sim` schema; results API; stored
+input snapshots and hashes.
+
+### P1.4 — Web
+
+2D network view, asset tables, running a scenario and inspecting results; end-to-end tests.
 
 ## P2 — Data platform
 
