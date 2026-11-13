@@ -8,10 +8,12 @@ distribution networks. Phases and acceptance criteria are in `docs/ROADMAP.md`.
 - **P0 (foundation) is merged** (PR 1). All four CI jobs passed on the PR and on `main`.
 - **P1.1 (grid engine scaffold) is merged** (PR 7): model, validation, pandapower adapter,
   power flow for Bus / Line / Load / ExternalGrid.
-- **P1.2a (engine: Transformer, Generator, Switch, CIGRE MV benchmark):** implementation
-  complete; pending review, CI verification and merge.
-- **Next:** P1.2b database (`grid` schema, tenant context, seed), then P1.2c API. Plan and
-  decisions D1–D6: decision 0007. Do not start a milestone without owner approval.
+- **P1.2a (engine: Transformer, Generator, Switch, CIGRE MV benchmark) is merged** (PR 8).
+- **P1.2b (database: `grid` schema, row-level security, `tenancy.tenant_transaction`,
+  `make seed-demo`):** implementation complete; pending review, CI verification and merge.
+  Design: decision 0008.
+- **Next:** P1.2c grid API (decisions D3–D5 in 0007). Do not start a milestone without
+  owner approval.
 
 ## Hard boundaries
 
@@ -22,6 +24,10 @@ distribution networks. Phases and acceptance criteria are in `docs/ROADMAP.md`.
 - Do not invent electrical formulas or parameters; use pandapower and cited sources.
 - A failed or non-converged power flow returns no values. De-energised elements are `None`,
   never zero. Never weaken the engine's consistency checks to make a result pass.
+- Tenant data is reached only through `tenancy.tenant_transaction`. Never set tenant
+  context with a session-level `SET`, never from a request value, never weaken a policy.
+- The development tenant and `make seed-demo` exist in `local` and `test` only. Migrations
+  run as `gridwise_owner`, never as `gridwise_app` and never as a superuser.
 
 ## Architecture (one screen)
 

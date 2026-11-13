@@ -12,7 +12,7 @@ NAMING_CONVENTION = {
 
 # Schemas owned by GRIDWISE migrations. Everything else in the database (for example the
 # internal schemas the TimescaleDB image pre-installs) is invisible to autogenerate.
-MANAGED_SCHEMAS = frozenset({"core"})
+MANAGED_SCHEMAS = frozenset({"core", "grid"})
 
 
 def include_managed_names(name: str | None, type_: str, parent_names: object) -> bool:

@@ -50,7 +50,7 @@ regression on Linux x86-64.
 Delivered as three pull requests, each reviewable alone. Design: decision 0007 and the
 "P1.2 design decisions" section in it.
 
-#### P1.2a — Engine: transformers, generators, switches (implementation complete; pending review, CI verification and merge)
+#### P1.2a — Engine: transformers, generators, switches (merged, pull request 8)
 
 | #   | Acceptance criterion                                                                                   | Evidence                                            |
 | --- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------- |
@@ -68,10 +68,23 @@ Deviation from the plan: criterion 3 was planned as a comparison with published 
 results. No citable table could be retrieved, so it is an equation check instead; see
 `docs/domain/grid-engine.md`, "Reference networks".
 
-#### P1.2b — Database (not started)
+#### P1.2b — Database (implementation complete; pending review, CI verification and merge)
 
-`grid` schema with constraints, policies and grants; tenant transaction helper; development
-tenant setting; seed command for the synthetic demo grid; isolation tests.
+Design: [decision 0008](decisions/0008-grid-persistence-and-development-tenant.md).
+
+| #   | Acceptance criterion                                                                                                     | Evidence                                          |
+| --- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------- |
+| 1   | The migration upgrades, downgrades and upgrades again, with and without data; models match the schema                    | `test_migrations.py`                              |
+| 2   | The runtime role has exactly the listed grants, owns nothing, and cannot run a migration                                 | `test_roles.py`, `test_migrations.py`             |
+| 3   | Without tenant context no grid table shows a row; with it a tenant sees only its own                                     | `test_grid_tenant_isolation.py`                   |
+| 4   | A tenant cannot create, change, delete or reference another tenant's rows; references cannot leave their grid            | `test_grid_tenant_isolation.py`                   |
+| 5   | Tenant context does not survive a commit, rollback or error on a pooled connection; concurrent tenants do not mix        | `test_tenant_transaction.py`                      |
+| 6   | The database rejects every invalid single row, including NaN and infinity in every numeric column                        | `test_grid_constraints.py`                        |
+| 7   | A grid is stored and read back unchanged, and its hash equals the stored hash                                            | `test_grid_repository.py`, `test_grid_mapping.py` |
+| 8   | Of two concurrent writers exactly one wins; a stale version changes nothing                                              | `test_grid_repository.py`                         |
+| 9   | The seed is deterministic and idempotent, refuses other environments, and the seeded grid solves to the benchmark result | `test_seed.py`                                    |
+| 10  | The development tenant needs both an allowed environment and an explicit setting                                         | `test_tenancy.py`                                 |
+| 11  | All earlier checks still pass                                                                                            | CI                                                |
 
 #### P1.2c — API (not started)
 

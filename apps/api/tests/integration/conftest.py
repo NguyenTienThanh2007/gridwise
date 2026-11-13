@@ -10,16 +10,18 @@ The configured development database itself is never migrated or modified.
 """
 
 import uuid
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
+from alembic import command
 from alembic.config import Config
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import Engine, create_engine, text
 from sqlalchemy.engine import make_url
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 API_ROOT = Path(__file__).resolve().parents[2]
 REPO_ENV_FILE = API_ROOT.parents[1] / ".env"
@@ -117,3 +119,43 @@ def app_engine(database: TestDatabase) -> Iterator[Engine]:
 @pytest.fixture
 def admin_engine(database: TestDatabase) -> Iterator[Engine]:
     yield from _engine(database.admin_url)
+
+
+# --- a migrated database with two tenants, for everything in the grid schema -------------
+
+
+@pytest.fixture
+def migrated(alembic_config: Config) -> None:
+    command.upgrade(alembic_config, "head")
+
+
+@pytest.fixture
+def tenants(migrated: None, owner_engine: Engine) -> dict[str, uuid.UUID]:
+    """Two organisations, created by the owner role (the runtime role cannot)."""
+    insert = text("INSERT INTO core.organizations (name, slug) VALUES (:name, :slug) RETURNING id")
+    with owner_engine.begin() as connection:
+        return {
+            slug: connection.execute(insert, {"name": slug.title(), "slug": slug}).scalar_one()
+            for slug in ("alpha", "bravo")
+        }
+
+
+async def _async_engine(url: str, **options: object) -> AsyncIterator[AsyncEngine]:
+    engine = create_async_engine(url, hide_parameters=True, **options)
+    try:
+        yield engine
+    finally:
+        await engine.dispose()
+
+
+@pytest.fixture
+async def app_async_engine(database: TestDatabase) -> AsyncIterator[AsyncEngine]:
+    """The runtime role, as the API connects."""
+    async for engine in _async_engine(database.app_url):
+        yield engine
+
+
+@pytest.fixture
+async def owner_async_engine(database: TestDatabase) -> AsyncIterator[AsyncEngine]:
+    async for engine in _async_engine(database.owner_url):
+        yield engine

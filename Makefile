@@ -13,7 +13,7 @@ env_value = $(shell sed -n 's/^$(1)=//p' .env 2>/dev/null | tail -n 1)
 API_PORT ?= $(or $(call env_value,API_PORT),8020)
 WEB_PORT ?= $(or $(call env_value,WEB_PORT),3100)
 
-.PHONY: help setup up up-web down reset-db migrate dev-api dev-web fmt lint typecheck \
+.PHONY: help setup up up-web down reset-db migrate seed-demo dev-api dev-web fmt lint typecheck \
         test test-engine test-integration test-e2e audit check
 
 help: ## List the available commands
@@ -38,6 +38,10 @@ reset-db: ## Stop the stack and delete the local database volume
 
 migrate: ## Apply migrations as the owner role (GRIDWISE_MIGRATION_DATABASE_URL)
 	cd apps/api && uv run alembic upgrade head
+
+# Source paths are explicit for the same reason as in test-engine (hidden .pth on macOS).
+seed-demo: ## Create the synthetic demo organisation and grid (local and test only)
+	PYTHONPATH=apps/api/src:packages/grid-engine/src uv run python -m gridwise_api.seed
 
 dev-api: ## Run the API on the host with reload (needs a migrated database)
 	uv run uvicorn --app-dir apps/api/src --factory gridwise_api.main:create_app --reload --port $(API_PORT)

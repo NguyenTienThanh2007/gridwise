@@ -47,6 +47,25 @@ GridModel ─▶ validate ─▶ energisation ─▶ PowerFlowSolver ─▶ cons
 Details: [grid-engine.md](../domain/grid-engine.md) and
 [decision 0007](../decisions/0007-p1-grid-engine-architecture.md).
 
+### Grid persistence (P1.2b)
+
+```
+GridModel ─▶ repositories/grid_mapping ─▶ repositories/grids ─▶ grid.* tables
+                                                ▲                     │ row-level security
+                                       tenancy.tenant_transaction ────┘ per transaction
+```
+
+- Eight tenant-owned tables in the `grid` schema mirror the engine's model. Every reference
+  carries `organization_id` and `grid_id`.
+- `tenant_transaction` is the only code that sets tenant context, and it is scoped to one
+  transaction. Repositories accept nothing but the session it yields.
+- No HTTP endpoint reads or writes grids yet (P1.2c). The only writer is the seed command,
+  which creates synthetic demonstration data in local and test environments.
+- There is still no authentication. The development tenant selects a tenant; it protects
+  nothing.
+
+Details: [decision 0008](../decisions/0008-grid-persistence-and-development-tenant.md).
+
 ### API layering
 
 ```
@@ -111,7 +130,7 @@ forecasting (reads gold; writes model metadata, evaluations and forecasts)
 
 | Phase | Adds                                                                                | Compose profile     |
 | ----- | ----------------------------------------------------------------------------------- | ------------------- |
-| P1    | Grid engine (P1.1 exists), `grid` and `sim` schemas, deterministic scenarios        | default             |
+| P1    | Grid engine (exists), `grid` schema (exists), `sim` schema, deterministic scenarios | default             |
 | P2    | `packages/shared` contracts, telemetry simulator, Redpanda, ingestion, object store | `streaming`, `lake` |
 | P3    | dbt transformations, Airflow orchestration, gold KPIs                               | `orchestration`     |
 | P4    | `packages/forecasting`: baselines, backtests, anomaly and overload risk             | none                |
@@ -123,16 +142,16 @@ Profiles exist because the development machine cannot hold every service in memo
 
 ### Database design by schema
 
-| Schema   | Tables                                                                                                         | Phase   |
-| -------- | -------------------------------------------------------------------------------------------------------------- | ------- |
-| `core`   | `organizations` (exists), users, memberships, audit_log                                                        | P0 / P6 |
-| `grid`   | grids, substations, buses, transformers, lines, switches, feeders, generators, loads, storage, meters, sensors | P1      |
-| `sim`    | scenarios, simulation_runs (seed, engine version, input hash), results                                         | P1      |
-| `bronze` | raw_events (event ID, original payload, source, schema version, ingestion time)                                | P2      |
-| `silver` | measurements hypertable (nullable value, unit, quality flag)                                                   | P2      |
-| `gold`   | dbt-built KPI and feature tables                                                                               | P3      |
-| `ml`     | models, versions, evaluations, forecasts                                                                       | P4      |
-| `ops`    | grid_events, alerts                                                                                            | P2–P5   |
+| Schema   | Tables                                                                                                                                         | Phase   |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `core`   | `organizations` (exists), users, memberships, audit_log                                                                                        | P0 / P6 |
+| `grid`   | grids, buses, lines, transformers, loads, generators, external_grids, switches (exist); substations, feeders, storage, meters, sensors (later) | P1      |
+| `sim`    | scenarios, simulation_runs (seed, engine version, input hash), results                                                                         | P1      |
+| `bronze` | raw_events (event ID, original payload, source, schema version, ingestion time)                                                                | P2      |
+| `silver` | measurements hypertable (nullable value, unit, quality flag)                                                                                   | P2      |
+| `gold`   | dbt-built KPI and feature tables                                                                                                               | P3      |
+| `ml`     | models, versions, evaluations, forecasts                                                                                                       | P4      |
+| `ops`    | grid_events, alerts                                                                                                                            | P2–P5   |
 
 Rules that apply to every future table:
 

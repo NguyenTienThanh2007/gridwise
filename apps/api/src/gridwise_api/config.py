@@ -2,15 +2,22 @@
 
 from functools import lru_cache
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Self
+from uuid import UUID
 
-from pydantic import Field, SecretStr, field_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Repository root when running from a checkout; simply absent in a container image.
 _REPO_ENV_FILE = Path(__file__).resolve().parents[4] / ".env"
 
 DATABASE_URL_SCHEME = "postgresql+psycopg://"
+
+type Environment = Literal["local", "test", "staging", "production"]
+
+#: The only environments in which development-only mechanisms may exist: the fixed
+#: development tenant and the synthetic demonstration data.
+DEVELOPMENT_ENVIRONMENTS: frozenset[str] = frozenset({"local", "test"})
 
 
 def _require_psycopg_url(value: SecretStr, field_name: str) -> SecretStr:
@@ -39,7 +46,7 @@ class LoggingSettings(BaseSettings):
 class Settings(LoggingSettings):
     """API runtime configuration."""
 
-    environment: Literal["local", "test", "staging", "production"] = "local"
+    environment: Environment = "local"
 
     # Credentials of the *runtime* role (gridwise_app): no superuser, no BYPASSRLS, owns
     # nothing. Required on purpose: there is no credential default in code.
@@ -48,6 +55,22 @@ class Settings(LoggingSettings):
     readiness_timeout_seconds: float = Field(default=2.0, gt=0, le=30)
 
     cors_origins: list[str] = Field(default_factory=list)
+
+    # The fixed development tenant (docs/decisions/0008). There is no authentication before
+    # P6, so tenant-scoped code can only run for one organisation chosen by the operator.
+    # No default, on purpose: `environment` defaults to "local", so the environment check
+    # alone would leave an unconfigured deployment open. Both must say so.
+    dev_organization_id: UUID | None = None
+
+    @model_validator(mode="after")
+    def _development_tenant_only_in_development(self) -> Self:
+        if self.dev_organization_id is not None and (
+            self.environment not in DEVELOPMENT_ENVIRONMENTS
+        ):
+            raise ValueError(
+                "dev_organization_id must not be set outside the local and test environments"
+            )
+        return self
 
     @field_validator("database_url")
     @classmethod
@@ -72,6 +95,17 @@ class MigrationSettings(LoggingSettings):
     @classmethod
     def _migration_url_scheme(cls, value: SecretStr) -> SecretStr:
         return _require_psycopg_url(value, "migration_database_url")
+
+
+class SeedSettings(MigrationSettings):
+    """Configuration of the demonstration-data command only (gridwise_api.seed).
+
+    It connects as the owner role, like the migration runner. ``environment`` has no
+    default here: the command must be told where it is, and refuses anything but local and
+    test.
+    """
+
+    environment: Environment
 
 
 @lru_cache
