@@ -80,7 +80,7 @@ def test_the_resolver_checks_the_environment_itself(environment: str) -> None:
         resolve_development_tenant(forged)
 
 
-@pytest.mark.parametrize("bad", ["not-a-uuid", "1234", ""])
+@pytest.mark.parametrize("bad", ["not-a-uuid", "1234", "d0000000-0000"])
 def test_a_malformed_development_tenant_is_rejected_without_echoing_it(bad: str) -> None:
     with pytest.raises(ValidationError) as raised:
         _settings(dev_organization_id=bad)
@@ -133,3 +133,10 @@ async def test_a_tenant_transaction_needs_a_uuid_before_it_touches_the_database(
     with pytest.raises(TypeError, match="UUID"):
         async with tenant_transaction(NoDatabase(), str(TENANT)):  # type: ignore[arg-type]
             pass
+
+
+@pytest.mark.parametrize("empty", ["", "   "])
+def test_an_empty_setting_means_not_configured(empty: str) -> None:
+    """Docker Compose passes an unset variable as an empty string; the API must still start."""
+    settings = _settings(environment="production", dev_organization_id=empty)
+    assert settings.dev_organization_id is None

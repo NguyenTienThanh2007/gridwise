@@ -24,7 +24,7 @@ async def _ready(database_url: str) -> httpx.Response:
     app = create_app(settings)
     try:
         transport = httpx.ASGITransport(app=app)
-        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        async with httpx.AsyncClient(transport=transport, base_url="http://localhost") as client:
             return await client.get("/health/ready")
     finally:
         await app.state.engine.dispose()

@@ -148,14 +148,14 @@ written in one transaction, so a run never has partial results.
 
 Approved 2026-11-12 with the P1.2 plan.
 
-| #   | Decision                                                                                                                                                                                             | Status                               |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| D1  | A line or transformer with an open switch at one end stays energised from the other end (charging current, no-load power). The out-of-service-bus rule of decision 4 is unchanged and applies first. | done (P1.2a)                         |
-| D2  | Reactive limits of voltage-controlled generators are enforced by the solver; a limited unit is flagged in the result and no longer holds its set-point.                                              | done (P1.2a)                         |
-| D3  | Through the API, single elements can change operating state and name only (`in_service`, switch `closed`). Electrical parameters change by replacing the whole topology.                             | P1.2c                                |
-| D4  | Every stored grid passes engine validation; a grid is created together with its topology.                                                                                                            | P1.2c                                |
-| D5  | Optimistic concurrency: a grid `version`, `ETag`, and a required `If-Match` on writes.                                                                                                               | database done (P1.2b); HTTP in P1.2c |
-| D6  | Buses carry optional schematic diagram coordinates in the database. They are not part of the electrical model or of the grid hash.                                                                   | done (P1.2b)                         |
+| #   | Decision                                                                                                                                                                                             | Status              |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| D1  | A line or transformer with an open switch at one end stays energised from the other end (charging current, no-load power). The out-of-service-bus rule of decision 4 is unchanged and applies first. | done (P1.2a)        |
+| D2  | Reactive limits of voltage-controlled generators are enforced by the solver; a limited unit is flagged in the result and no longer holds its set-point.                                              | done (P1.2a)        |
+| D3  | Through the API, single elements can change operating state and name only (`in_service`, switch `closed`). Electrical parameters change by replacing the whole topology.                             | done (P1.2c)        |
+| D4  | Every stored grid passes engine validation; a grid is created together with its topology.                                                                                                            | done (P1.2c)        |
+| D5  | Optimistic concurrency: a grid `version`, `ETag`, and a required `If-Match` on writes.                                                                                                               | done (P1.2b, P1.2c) |
+| D6  | Buses carry optional schematic diagram coordinates in the database. They are not part of the electrical model or of the grid hash.                                                                   | done (P1.2b)        |
 
 Further decisions made while implementing P1.2a:
 

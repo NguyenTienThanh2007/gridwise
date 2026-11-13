@@ -17,13 +17,16 @@ power flow of a network of buses, lines, loads and an external grid.
 **P1.2a (transformers, generators and switches in the engine) is merged.** It also ships the
 CIGRE medium-voltage benchmark as a synthetic demonstration network.
 
-**P1.2b (grid database): implementation complete; pending review, CI verification and
-merge.** It adds the `grid` schema with row-level security, a transaction-scoped tenant
-context, and a command that seeds the synthetic demonstration grid.
+**P1.2b (grid database) is merged**: the `grid` schema with row-level security, a
+transaction-scoped tenant context, and a command that seeds the synthetic demonstration grid.
 
-No HTTP endpoint reads or writes grids yet, the engine is not called by the API, and the web
-app is unchanged. There is no authentication: tenant isolation exists in the database, but
-nothing yet decides who may act for which tenant. See [docs/ROADMAP.md](docs/ROADMAP.md).
+**P1.2c (grid API): implementation complete; pending review, CI verification and merge.**
+`/api/v1/grids` creates, reads, changes and deletes grids, their topology and their assets,
+with engine validation and optimistic concurrency on every write.
+
+No power flow runs through the API yet, and the web app is unchanged. There is no
+authentication: the grid API exists only in local and test environments and acts for one
+fixed development tenant. See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 What works today:
 

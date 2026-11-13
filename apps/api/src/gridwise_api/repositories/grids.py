@@ -4,8 +4,9 @@ Every function takes a ``TenantSession``: it runs inside a transaction whose ten
 is set, and it also filters by ``organization_id`` explicitly (docs/decisions/0004), so a
 query stays correct even for a role that row-level security does not filter.
 
-This repository does not validate the electrical model. Callers validate with the engine
-before writing (the seed command does; the grid service of P1.2c will).
+This repository does not validate the electrical model and does not decide versions or
+hashes. Callers validate with the engine before writing: the seed command, and the grid
+service (services/grids.py), which also owns locking, versions and the topology hash.
 """
 
 from collections.abc import Callable
@@ -14,7 +15,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import Table, delete, insert, select, text, update
+from sqlalchemy import Table, delete, func, insert, select, text, update
 
 from gridwise_api.models import grid as tables
 from gridwise_api.repositories.grid_mapping import (
@@ -128,17 +129,29 @@ async def create_grid(
         if element_id is not None
         else await _database_ids(session, model)
     )
+    await _insert_elements(session, model, created.id, ids, diagram_coordinates)
+    return _record(created)
+
+
+async def _insert_elements(
+    session: TenantSession,
+    model: GridModel,
+    grid_id: UUID,
+    ids: ElementIds,
+    diagram_coordinates: Coordinates | None,
+) -> None:
     rows = rows_from_model(
         model,
-        organization_id=organization_id,
-        grid_id=created.id,
+        organization_id=session.organization_id,
+        grid_id=grid_id,
         ids=ids,
         diagram_coordinates=diagram_coordinates,
     )
+    # Referenced tables first: buses before what attaches to them, lines and transformers
+    # before the switches on them.
     for table in ELEMENT_TABLES:
         if rows[table]:
             await session.execute(insert(_ELEMENTS[table]), rows[table])
-    return _record(created)
 
 
 async def get_grid(session: TenantSession, grid_id: UUID) -> GridRecord | None:
@@ -206,3 +219,137 @@ async def claim_version(session: TenantSession, grid_id: UUID, expected_version:
     if new_version is None:
         raise GridVersionConflictError
     return int(new_version)
+
+
+# --- used by the grid service (P1.2c) ---------------------------------------------------
+
+
+async def lock_grid(session: TenantSession, grid_id: UUID) -> GridRecord | None:
+    """Read a grid and lock its row until the transaction ends (``SELECT ... FOR UPDATE``).
+
+    Every writer to a grid takes this lock first, so writers to one grid are serialised.
+    None when the grid does not exist or belongs to another tenant: the two cases are
+    indistinguishable here, by design.
+    """
+    row = (
+        await session.execute(
+            select(_GRIDS)
+            .where(_GRIDS.c.organization_id == session.organization_id, _GRIDS.c.id == grid_id)
+            .with_for_update()
+        )
+    ).one_or_none()
+    return _record(row) if row is not None else None
+
+
+async def save_grid_header(
+    session: TenantSession,
+    grid_id: UUID,
+    *,
+    version: int,
+    topology_hash: str,
+    name: str | None = None,
+    description: str | None = None,
+    frequency_hz: float | None = None,
+) -> GridRecord:
+    """Write the grid row's new version and hash, and any changed header fields.
+
+    The caller holds the lock from ``lock_grid`` and has decided ``version`` and
+    ``topology_hash``.
+    """
+    values: dict[str, Any] = {"version": version, "topology_hash": topology_hash}
+    if name is not None:
+        values["name"] = name
+    if description is not None:
+        values["description"] = description
+    if frequency_hz is not None:
+        values["frequency_hz"] = float(frequency_hz)
+    row = (
+        await session.execute(
+            update(_GRIDS)
+            .where(_GRIDS.c.organization_id == session.organization_id, _GRIDS.c.id == grid_id)
+            .values(**values)
+            .returning(_GRIDS)
+        )
+    ).one()
+    return _record(row)
+
+
+async def replace_elements(
+    session: TenantSession,
+    grid_id: UUID,
+    model: GridModel,
+    diagram_coordinates: Coordinates | None,
+) -> None:
+    """Delete every element of a grid and insert the elements of ``model``.
+
+    Keys are the stable identifiers and are kept; row ids are new. The caller holds the
+    grid's lock and writes the header afterwards, in the same transaction.
+    """
+    # Dependants first: switches reference lines, transformers and buses; everything else
+    # references buses.
+    for name in reversed(ELEMENT_TABLES):
+        table = _ELEMENTS[name]
+        await session.execute(
+            delete(table).where(
+                table.c.organization_id == session.organization_id, table.c.grid_id == grid_id
+            )
+        )
+    ids = await _database_ids(session, model)
+    await _insert_elements(session, model, grid_id, ids, diagram_coordinates)
+
+
+async def update_element(
+    session: TenantSession, grid_id: UUID, table_name: str, key: str, values: dict[str, Any]
+) -> bool:
+    """Change columns of one element, found by its key. False if there is no such element."""
+    table = _ELEMENTS[table_name]
+    result = await session.execute(
+        update(table)
+        .where(
+            table.c.organization_id == session.organization_id,
+            table.c.grid_id == grid_id,
+            table.c.key == key,
+        )
+        .values(**values)
+    )
+    return result.rowcount == 1
+
+
+async def list_grids(
+    session: TenantSession, *, limit: int, offset: int
+) -> tuple[list[GridRecord], int]:
+    """A page of the tenant's grids, by name then id, and the total number of grids."""
+    tenant = _GRIDS.c.organization_id == session.organization_id
+    total = (
+        await session.execute(select(func.count()).select_from(_GRIDS).where(tenant))
+    ).scalar_one()
+    rows = await session.execute(
+        select(_GRIDS)
+        .where(tenant)
+        .order_by(_GRIDS.c.name, _GRIDS.c.id)
+        .limit(limit)
+        .offset(offset)
+    )
+    return [_record(row) for row in rows], int(total)
+
+
+async def element_counts(
+    session: TenantSession, grid_ids: list[UUID]
+) -> dict[UUID, dict[str, int]]:
+    """Number of elements of each type, per grid. Grids without elements of a type get 0."""
+    counts = {grid_id: dict.fromkeys(ELEMENT_TABLES, 0) for grid_id in grid_ids}
+    if not grid_ids:
+        return counts
+    for name in ELEMENT_TABLES:
+        table = _ELEMENTS[name]
+        rows = await session.execute(
+            select(table.c.grid_id.label("grid_id"), func.count().label("count"))
+            .where(
+                table.c.organization_id == session.organization_id,
+                table.c.grid_id.in_(grid_ids),
+            )
+            .group_by(table.c.grid_id)
+        )
+        for row in rows.mappings():
+            counts[row["grid_id"]][name] = int(row["count"])
+    return counts

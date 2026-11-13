@@ -14,6 +14,7 @@ from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass
 from pathlib import Path
 
+import httpx
 import pytest
 from alembic import command
 from alembic.config import Config
@@ -22,6 +23,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import Engine, create_engine, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+
+from tests.support.api import grid_api
 
 API_ROOT = Path(__file__).resolve().parents[2]
 REPO_ENV_FILE = API_ROOT.parents[1] / ".env"
@@ -159,3 +162,22 @@ async def app_async_engine(database: TestDatabase) -> AsyncIterator[AsyncEngine]
 async def owner_async_engine(database: TestDatabase) -> AsyncIterator[AsyncEngine]:
     async for engine in _async_engine(database.owner_url):
         yield engine
+
+
+# --- the grid API over HTTP --------------------------------------------------------------
+
+
+@pytest.fixture
+async def alpha_api(
+    tenants: dict[str, uuid.UUID], database: TestDatabase
+) -> AsyncIterator[httpx.AsyncClient]:
+    async with grid_api(database.app_url, tenants["alpha"]) as client:
+        yield client
+
+
+@pytest.fixture
+async def bravo_api(
+    tenants: dict[str, uuid.UUID], database: TestDatabase
+) -> AsyncIterator[httpx.AsyncClient]:
+    async with grid_api(database.app_url, tenants["bravo"]) as client:
+        yield client

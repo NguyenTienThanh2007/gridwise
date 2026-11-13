@@ -56,11 +56,28 @@ class Settings(LoggingSettings):
 
     cors_origins: list[str] = Field(default_factory=list)
 
+    # Host names the API answers to (the Host header, without the port). Anything else is
+    # refused: without authentication, this is what stops a web page that rebinds its own
+    # domain to 127.0.0.1 from reaching the API (decision 0009).
+    allowed_hosts: list[str] = Field(
+        default_factory=lambda: ["localhost", "127.0.0.1", "::1"], min_length=1
+    )
+
+    # Limits of the grid API. CIGRE MV, the demonstration network, has 68 elements.
+    grid_max_elements: int = Field(default=5000, ge=1, le=100_000)
+    max_request_body_bytes: int = Field(default=2 * 1024 * 1024, ge=1024, le=64 * 1024 * 1024)
+
     # The fixed development tenant (docs/decisions/0008). There is no authentication before
     # P6, so tenant-scoped code can only run for one organisation chosen by the operator.
     # No default, on purpose: `environment` defaults to "local", so the environment check
     # alone would leave an unconfigured deployment open. Both must say so.
     dev_organization_id: UUID | None = None
+
+    @field_validator("dev_organization_id", mode="before")
+    @classmethod
+    def _empty_means_not_configured(cls, value: object) -> object:
+        # Docker Compose passes an unset variable as an empty string.
+        return None if isinstance(value, str) and not value.strip() else value
 
     @model_validator(mode="after")
     def _development_tenant_only_in_development(self) -> Self:
@@ -82,6 +99,13 @@ class Settings(LoggingSettings):
     def _no_wildcard_origin(cls, value: list[str]) -> list[str]:
         if "*" in value:
             raise ValueError("cors_origins must list explicit origins, not '*'")
+        return value
+
+    @field_validator("allowed_hosts")
+    @classmethod
+    def _explicit_hosts(cls, value: list[str]) -> list[str]:
+        if any("*" in host or not host.strip() for host in value):
+            raise ValueError("allowed_hosts must list explicit host names")
         return value
 
 

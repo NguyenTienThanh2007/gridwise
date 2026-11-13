@@ -27,6 +27,8 @@ _CODES = {
     HTTPStatus.NOT_FOUND: "not_found",
     HTTPStatus.METHOD_NOT_ALLOWED: "method_not_allowed",
     HTTPStatus.CONFLICT: "conflict",
+    HTTPStatus.PRECONDITION_FAILED: "precondition_failed",
+    HTTPStatus.REQUEST_ENTITY_TOO_LARGE: "request_too_large",
     HTTPStatus.TOO_MANY_REQUESTS: "rate_limited",
 }
 INTERNAL_ERROR_MESSAGE = "Internal server error"
@@ -69,6 +71,33 @@ def error_response(
     )
     return JSONResponse(
         body.model_dump(exclude_none=True, mode="json"), status_code=status_code, headers=headers
+    )
+
+
+class ApiError(Exception):
+    """A deliberate failure with its own code, raised by routes and dependencies."""
+
+    def __init__(
+        self,
+        status_code: int,
+        code: str,
+        message: str,
+        *,
+        details: list[ErrorDetail] | None = None,
+        headers: dict[str, str] | None = None,
+    ) -> None:
+        super().__init__(code)
+        self.status_code = status_code
+        self.code = code
+        self.message = message
+        self.details = details
+        self.headers = headers
+
+
+async def api_error_handler(request: Request, exc: Exception) -> JSONResponse:
+    assert isinstance(exc, ApiError)  # noqa: S101  (registered for this type)
+    return error_response(
+        exc.status_code, exc.code, exc.message, details=exc.details, headers=exc.headers
     )
 
 
