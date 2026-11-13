@@ -100,17 +100,49 @@ def test_runtime_role_has_exactly_the_granted_privileges(admin_engine: Engine) -
             ),
             {"role": APP_ROLE},
         ).scalars()
-        assert list(tables) == ["core.organizations:SELECT", "public.alembic_version:SELECT"]
+        grid_tables = (
+            "buses",
+            "external_grids",
+            "generators",
+            "grids",
+            "lines",
+            "loads",
+            "switches",
+            "transformers",
+        )
+        assert list(tables) == [
+            "core.organizations:SELECT",
+            *(
+                f"grid.{table}:{privilege}"
+                for table in grid_tables
+                for privilege in ("DELETE", "INSERT", "SELECT", "UPDATE")
+            ),
+            "public.alembic_version:SELECT",
+        ]
 
         schema_privileges = connection.execute(
             text(
                 "SELECT has_schema_privilege(:role, 'core', 'USAGE'), "
                 "has_schema_privilege(:role, 'core', 'CREATE'), "
-                "has_schema_privilege(:role, 'public', 'CREATE')"
+                "has_schema_privilege(:role, 'public', 'CREATE'), "
+                "has_schema_privilege(:role, 'grid', 'USAGE'), "
+                "has_schema_privilege(:role, 'grid', 'CREATE')"
             ),
             {"role": APP_ROLE},
         ).one()
-        assert tuple(schema_privileges) == (True, False, False)
+        assert tuple(schema_privileges) == (True, False, False, True, False)
+
+        # Privileges that information_schema.role_table_grants would also list, stated
+        # explicitly because they would defeat the design: no TRUNCATE (it ignores
+        # row-level security), no REFERENCES, no TRIGGER.
+        dangerous = connection.execute(
+            text(
+                "SELECT count(*) FROM information_schema.role_table_grants "
+                "WHERE grantee = :role AND privilege_type IN ('TRUNCATE', 'REFERENCES', 'TRIGGER')"
+            ),
+            {"role": APP_ROLE},
+        ).scalar_one()
+        assert dangerous == 0
 
 
 def test_runtime_role_can_do_what_the_api_needs(app_engine: Engine) -> None:
@@ -131,6 +163,16 @@ def test_runtime_role_can_do_what_the_api_needs(app_engine: Engine) -> None:
         "DROP TABLE core.organizations",
         "DROP POLICY organization_is_current_tenant ON core.organizations",
         "CREATE TABLE core.sneaky (id int)",
+        "CREATE TABLE grid.sneaky (id int)",
+        "TRUNCATE grid.grids CASCADE",
+        "TRUNCATE grid.buses CASCADE",
+        "ALTER TABLE grid.grids DISABLE ROW LEVEL SECURITY",
+        "ALTER TABLE grid.loads ADD COLUMN injected text",
+        "DROP POLICY tenant_isolation ON grid.grids",
+        "CREATE POLICY open_door ON grid.grids USING (true)",
+        "DROP TABLE grid.switches",
+        "DROP SCHEMA grid CASCADE",
+        "ALTER TABLE grid.grids DROP CONSTRAINT ck_grids_data_origin_synthetic",
         "CREATE TABLE public.sneaky (id int)",
         "CREATE SCHEMA sneaky",
         "UPDATE alembic_version SET version_num = '9999'",

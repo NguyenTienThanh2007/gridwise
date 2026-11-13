@@ -1,6 +1,7 @@
 # 0004 — Tenant column from the first migration
 
-- Status: accepted (P0, 2026-11-11); revised after the P0 review (see 0006)
+- Status: accepted (P0, 2026-11-11); revised after the P0 review (see 0006); extended by
+  [0008](0008-grid-persistence-and-development-tenant.md) in P1.2b
 
 ## Context
 
@@ -30,16 +31,23 @@ Exists and is tested:
 - Tenant context set with `set_config(..., true)` ends with the transaction and does not
   leak to the next user of a pooled connection. A malformed context fails the query.
 
+Added in P1.2b (decision 0008), and tested:
+
+- The eight tables of the `grid` schema carry a policy for every command, with `WITH CHECK`.
+- `tenancy.tenant_transaction` is the one place that sets tenant context.
+- Composite foreign keys keep every reference inside its grid and its tenant.
+
 Does **not** exist yet:
 
-- No API code sets tenant context. No endpoint reads tenant data.
-- No authenticated identity exists to derive a tenant from (P6).
-- No organisation is seeded; the table is empty after migration.
-- Only one table carries a policy, and it covers `SELECT` only.
+- No endpoint reads tenant data (P1.2c).
+- No authenticated identity exists to derive a tenant from (P6). Until then the only tenant
+  the application can act for is the fixed development tenant, in local and test.
+- No organisation exists after migration. The development organisation is created by an
+  explicit command, in local and test only.
 - The owner role is not filtered (`FORCE ROW LEVEL SECURITY` is not set).
 
-**GRIDWISE is therefore not tenant-isolated yet.** The tests are a preliminary proof of the
-database mechanism, nothing more.
+**GRIDWISE is therefore not access-controlled.** The database isolates tenants for the
+runtime role once tenant context is set; nothing yet decides who may set which.
 
 ## Rules for the code that will set tenant context
 

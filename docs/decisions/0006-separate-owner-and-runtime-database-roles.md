@@ -34,12 +34,14 @@ Three roles, each with one job:
 
 Current grants to `gridwise_app` (asserted exactly by `test_roles.py`):
 
-| Object                           | Privilege | Why                                   |
-| -------------------------------- | --------- | ------------------------------------- |
-| schema `core`                    | `USAGE`   | Reach objects in it                   |
-| `core.organizations`             | `SELECT`  | Read its own tenant row (policy 0004) |
-| `core.current_organization_id()` | `EXECUTE` | Used by row-level security policies   |
-| `public.alembic_version`         | `SELECT`  | Readiness compares schema revisions   |
+| Object                           | Privilege                              | Why                                   |
+| -------------------------------- | -------------------------------------- | ------------------------------------- |
+| schema `core`                    | `USAGE`                                | Reach objects in it                   |
+| `core.organizations`             | `SELECT`                               | Read its own tenant row (policy 0004) |
+| `core.current_organization_id()` | `EXECUTE`                              | Used by row-level security policies   |
+| `public.alembic_version`         | `SELECT`                               | Readiness compares schema revisions   |
+| schema `grid`                    | `USAGE`                                | Reach objects in it (P1.2b)           |
+| the eight `grid` tables          | `SELECT`, `INSERT`, `UPDATE`, `DELETE` | Grid data, filtered by policy (0008)  |
 
 ## Conventions for every later migration
 
