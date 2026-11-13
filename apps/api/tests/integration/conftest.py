@@ -41,6 +41,7 @@ class IntegrationSettings(BaseSettings):
     database_url: SecretStr
     migration_database_url: SecretStr
     test_admin_database_url: SecretStr
+    worker_database_url: SecretStr
 
 
 @dataclass(frozen=True)
@@ -56,6 +57,7 @@ class TestDatabase:
     admin_url: str
     owner_url: str
     app_url: str
+    worker_url: str = ""
 
     def __repr__(self) -> str:
         return f"TestDatabase(name={self.name!r})"
@@ -86,6 +88,7 @@ def database(integration_settings: IntegrationSettings) -> Iterator[TestDatabase
             admin_url=_for_database(integration_settings.test_admin_database_url, name),
             owner_url=_for_database(integration_settings.migration_database_url, name),
             app_url=_for_database(integration_settings.database_url, name),
+            worker_url=_for_database(integration_settings.worker_database_url, name),
         )
     finally:
         with admin.connect() as connection:
@@ -122,6 +125,12 @@ def app_engine(database: TestDatabase) -> Iterator[Engine]:
 @pytest.fixture
 def admin_engine(database: TestDatabase) -> Iterator[Engine]:
     yield from _engine(database.admin_url)
+
+
+@pytest.fixture
+def worker_engine(database: TestDatabase) -> Iterator[Engine]:
+    """The worker's role: no table privileges, only the worker functions."""
+    yield from _engine(database.worker_url)
 
 
 # --- a migrated database with two tenants, for everything in the grid schema -------------

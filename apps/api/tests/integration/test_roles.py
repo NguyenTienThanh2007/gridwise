@@ -27,7 +27,7 @@ def _denied(engine: Engine, statement: str) -> bool:
     return False
 
 
-@pytest.mark.parametrize("role", [APP_ROLE, OWNER_ROLE])
+@pytest.mark.parametrize("role", [APP_ROLE, OWNER_ROLE, "gridwise_worker"])
 def test_application_roles_have_no_elevated_attributes(admin_engine: Engine, role: str) -> None:
     with admin_engine.connect() as connection:
         attributes = connection.execute(
@@ -122,6 +122,7 @@ def test_runtime_role_has_exactly_the_granted_privileges(admin_engine: Engine) -
             "sim.job_transitions:SELECT",
             "sim.jobs:INSERT",
             "sim.jobs:SELECT",
+            "sim.results:SELECT",
             "sim.scenarios:DELETE",
             "sim.scenarios:INSERT",
             "sim.scenarios:SELECT",
@@ -226,3 +227,48 @@ def test_runtime_role_is_denied_everything_else(app_engine: Engine, statement: s
 def test_timescaledb_telemetry_is_disabled(admin_engine: Engine) -> None:
     with admin_engine.connect() as connection:
         assert connection.execute(text("SHOW timescaledb.telemetry_level")).scalar_one() == "off"
+
+
+def test_the_worker_role_has_only_its_functions(admin_engine: Engine) -> None:
+    """No table privilege except reading the schema revision; EXECUTE on five functions."""
+    with admin_engine.connect() as connection:
+        tables = connection.execute(
+            text(
+                "SELECT table_schema || '.' || table_name || ':' || privilege_type "
+                "FROM information_schema.role_table_grants WHERE grantee = 'gridwise_worker' "
+                "ORDER BY 1"
+            )
+        ).scalars()
+        assert list(tables) == ["public.alembic_version:SELECT"]
+        functions = connection.execute(
+            text(
+                "SELECT n.nspname || '.' || p.proname FROM pg_proc p "
+                "JOIN pg_namespace n ON n.oid = p.pronamespace "
+                "WHERE n.nspname IN ('core', 'grid', 'sim', 'public') "
+                "AND has_function_privilege('gridwise_worker', p.oid, 'EXECUTE') "
+                "AND NOT EXISTS (SELECT 1 FROM "
+                "aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) a "
+                "WHERE a.grantee = 0) "
+                "ORDER BY 1"
+            )
+        ).scalars()
+        assert list(functions) == [
+            "sim.claim_next_job",
+            "sim.complete_job",
+            "sim.fail_job",
+            "sim.heartbeat_job",
+            "sim.release_job",
+        ]
+        schemas = connection.execute(
+            text(
+                "SELECT has_schema_privilege('gridwise_worker', 'sim', 'USAGE'), "
+                "has_schema_privilege('gridwise_worker', 'sim', 'CREATE'), "
+                "has_schema_privilege('gridwise_worker', 'grid', 'USAGE'), "
+                "has_schema_privilege('gridwise_worker', 'core', 'USAGE')"
+            )
+        ).one()
+        assert tuple(schemas) == (True, False, False, False)
+        memberships = connection.execute(
+            text("SELECT count(*) FROM pg_auth_members WHERE member = 'gridwise_worker'::regrole")
+        ).scalar_one()
+        assert memberships == 0

@@ -7,6 +7,7 @@ members = [
     "gridwise",
     "gridwise-api",
     "gridwise-grid-engine",
+    "gridwise-worker",
 ]
 
 [[package]]
@@ -332,6 +333,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "gridwise-api" },
     { name = "gridwise-grid-engine" },
+    { name = "gridwise-worker" },
 ]
 
 [package.dev-dependencies]
@@ -348,6 +350,7 @@ dev = [
 requires-dist = [
     { name = "gridwise-api", editable = "apps/api" },
     { name = "gridwise-grid-engine", editable = "packages/grid-engine" },
+    { name = "gridwise-worker", editable = "apps/worker" },
 ]
 
 [package.metadata.requires-dev]
@@ -399,6 +402,25 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [{ name = "pandapower", specifier = ">=3.5.6,<3.6" }]
+
+[[package]]
+name = "gridwise-worker"
+version = "0.1.0"
+source = { editable = "apps/worker" }
+dependencies = [
+    { name = "gridwise-api" },
+    { name = "gridwise-grid-engine" },
+    { name = "psycopg", extra = ["binary"] },
+    { name = "sqlalchemy" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "gridwise-api", editable = "apps/api" },
+    { name = "gridwise-grid-engine", editable = "packages/grid-engine" },
+    { name = "psycopg", extras = ["binary"], specifier = ">=3.3,<4" },
+    { name = "sqlalchemy", specifier = ">=2.1.8,<2.2" },
+]
 
 [[package]]
 name = "h11"

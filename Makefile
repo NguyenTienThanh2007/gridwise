@@ -13,7 +13,7 @@ env_value = $(shell sed -n 's/^$(1)=//p' .env 2>/dev/null | tail -n 1)
 API_PORT ?= $(or $(call env_value,API_PORT),8020)
 WEB_PORT ?= $(or $(call env_value,WEB_PORT),3100)
 
-.PHONY: help setup up up-web down reset-db migrate seed-demo dev-api dev-web fmt lint typecheck \
+.PHONY: help setup up up-web down reset-db migrate seed-demo db-worker-role up-worker worker dev-api dev-web fmt lint typecheck \
         test test-engine test-integration test-e2e audit check
 
 help: ## List the available commands
@@ -30,11 +30,20 @@ up: ## Start postgres, run migrations and start the API (waits for health)
 up-web: ## Same as `up`, plus the web app in a container
 	docker compose --profile web up -d --build --wait
 
+up-worker: ## Same as `up`, plus the simulation worker
+	docker compose --profile worker up -d --build --wait
+
+worker: ## Run the simulation worker on the host (needs a migrated database)
+	PYTHONPATH=apps/worker/src:apps/api/src:packages/grid-engine/src uv run python -m gridwise_worker
+
+db-worker-role: ## Create the worker role in an existing database volume (idempotent)
+	./scripts/create-worker-role.sh
+
 down: ## Stop the stack (data is kept)
 	docker compose --profile web down
 
 reset-db: ## Stop the stack and delete the local database volume
-	docker compose --profile web down --volumes
+	docker compose --profile web --profile worker down --volumes
 
 migrate: ## Apply migrations as the owner role (GRIDWISE_MIGRATION_DATABASE_URL)
 	cd apps/api && uv run alembic upgrade head

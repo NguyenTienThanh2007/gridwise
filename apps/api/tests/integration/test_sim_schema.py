@@ -438,10 +438,12 @@ def test_every_sim_table_has_row_level_security(migrated: None, admin_engine: En
             )
         ).all()
     enabled = {row.relname: row.relrowsecurity for row in rows}
-    assert enabled == {**dict.fromkeys(SIM_TABLES, True), "job_transitions": False}
+    tenant_tables = (*SIM_TABLES, "results")
+    reference_data = ("job_transitions", "failure_catalogue")
+    assert enabled == {**dict.fromkeys(tenant_tables, True), **dict.fromkeys(reference_data, False)}
     condition = "(organization_id = core.current_organization_id())"
     assert [tuple(row) for row in policies] == [
-        (table, "ALL", "{gridwise_app}", condition, condition) for table in sorted(SIM_TABLES)
+        (table, "ALL", "{gridwise_app}", condition, condition) for table in sorted(tenant_tables)
     ]
 
 

@@ -29,6 +29,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
       GRIDWISE_DB_OWNER_PASSWORD: ${GRIDWISE_DB_OWNER_PASSWORD:?set GRIDWISE_DB_OWNER_PASSWORD in .env}
       GRIDWISE_DB_APP_PASSWORD: ${GRIDWISE_DB_APP_PASSWORD:?set GRIDWISE_DB_APP_PASSWORD in .env}
+      GRIDWISE_DB_WORKER_PASSWORD: ${GRIDWISE_DB_WORKER_PASSWORD:?set GRIDWISE_DB_WORKER_PASSWORD in .env}
       # No usage reporting to Timescale. Applied when the data directory is initialised.
       TIMESCALEDB_TELEMETRY: "off"
       # Keep the tuner modest: the development Docker VM is small.
@@ -92,6 +93,34 @@ services:
       timeout: 5s
       retries: 6
       start_period: 5s
+    restart: unless-stopped
+
+  # The simulation worker (decision 0011). Optional: `make up-worker` or
+  # `docker compose --profile worker up`. It solves queued simulation jobs; nothing else
+  # runs a power flow. It reaches the database only through the worker functions.
+  worker:
+    image: gridwise-api:local
+    profiles: ["worker"]
+    command: ["python", "-m", "gridwise_worker"]
+    environment:
+      <<: *logging-environment
+      GRIDWISE_WORKER_DATABASE_URL: postgresql+psycopg://gridwise_worker:${GRIDWISE_DB_WORKER_PASSWORD:?set GRIDWISE_DB_WORKER_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:?set POSTGRES_DB in .env}
+      GRIDWISE_WORKER_JOB_TIMEOUT_SECONDS: ${GRIDWISE_WORKER_JOB_TIMEOUT_SECONDS:-120}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    # One solver process: about 80 MB for the parent and 250-400 MB for the child that
+    # loads pandapower. Sized for a 4 GB development Docker VM.
+    mem_limit: 768m
+    cpus: 1.0
+    # SIGTERM first: the worker stops claiming, finishes or releases its job within 20 s.
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD", "python", "-m", "gridwise_worker.healthcheck"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     restart: unless-stopped
 
   web:

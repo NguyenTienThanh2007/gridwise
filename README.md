@@ -23,12 +23,15 @@ transaction-scoped tenant context, and a command that seeds the synthetic demons
 **P1.2c (grid API) is merged**: `/api/v1/grids` creates, reads, changes and deletes grids,
 their topology and their assets, with engine validation and optimistic concurrency.
 
-**P1.3a (simulation domain): implementation complete; pending review, CI verification and
-merge.** Simulations can be submitted against a stored grid: the grid and its scenario are
-captured as immutable snapshots, and jobs follow a lifecycle the database enforces. Nothing
-runs them yet: the worker is P1.3b.
+**P1.3a (simulation domain) is merged** (PR 11): simulations can be submitted against a
+stored grid, captured as immutable snapshots, with a lifecycle the database enforces.
 
-No power flow runs through the API, and the web app is unchanged. There is no
+**P1.3b (simulation worker): implementation complete; pending review, CI verification and
+merge.** A separate worker (`make up-worker`) solves queued jobs in a child process it can
+kill, and stores each result with the job's completion.
+
+No power flow runs in the API process, there is no simulation HTTP API yet (P1.3d), and the
+web app is unchanged. There is no
 authentication: the grid API exists only in local and test environments and acts for one
 fixed development tenant. See [docs/ROADMAP.md](docs/ROADMAP.md).
 

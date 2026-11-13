@@ -12,12 +12,21 @@ from gridwise_api.models.grid import (
     Transformer,
 )
 from gridwise_api.models.organization import Organization
-from gridwise_api.models.simulation import Job, JobAttempt, JobTransition, Scenario, Snapshot
+from gridwise_api.models.simulation import (
+    FailureCatalogue,
+    Job,
+    JobAttempt,
+    JobTransition,
+    Result,
+    Scenario,
+    Snapshot,
+)
 
 __all__ = [
     "Base",
     "Bus",
     "ExternalGrid",
+    "FailureCatalogue",
     "Generator",
     "Grid",
     "Job",
@@ -26,6 +35,7 @@ __all__ = [
     "Line",
     "Load",
     "Organization",
+    "Result",
     "Scenario",
     "Snapshot",
     "Switch",

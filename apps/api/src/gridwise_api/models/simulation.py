@@ -124,7 +124,16 @@ class Job(Base):
             name="fk_jobs_scenario",
             ondelete="SET NULL (scenario_id)",
         ),
+        ForeignKeyConstraint(
+            ["failure_code", "failure_message"],
+            ["sim.failure_catalogue.code", "sim.failure_catalogue.message"],
+            name="fk_jobs_failure",
+        ),
         Index("ix_jobs_organization_status_created", "organization_id", "status", "created_at"),
+        Index("ix_jobs_queued", "created_at", "id", postgresql_where=text("status = 'queued'")),
+        Index(
+            "ix_jobs_running_lease", "lease_expires_at", postgresql_where=text("status = 'running'")
+        ),
         Index("ix_jobs_source_grid_id", "source_grid_id"),
         Index("ix_jobs_scenario_id", "scenario_id"),
         Index("ix_jobs_base_snapshot_id", "base_snapshot_id"),
@@ -199,3 +208,44 @@ class JobAttempt(Base):
     )
     ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     ended_by: Mapped[str | None] = mapped_column(Text)
+
+
+class FailureCatalogue(Base):
+    """Reference data: the only failure codes and messages there are."""
+
+    __tablename__ = "failure_catalogue"
+    __table_args__ = (
+        PrimaryKeyConstraint("code", name="pk_failure_catalogue"),
+        UniqueConstraint("code", "message", name="uq_failure_catalogue_code_message"),
+        {"schema": SCHEMA},
+    )
+
+    code: Mapped[str] = mapped_column(Text)
+    message: Mapped[str] = mapped_column(Text)
+
+
+class Result(Base):
+    """The result of one converged job, as the engine computed it. Written only by
+    sim.complete_job, never changed."""
+
+    __tablename__ = "results"
+    __table_args__ = (
+        PrimaryKeyConstraint("id", name="pk_results"),
+        UniqueConstraint("organization_id", "job_id", name="uq_results_organization_job"),
+        ForeignKeyConstraint(
+            ["organization_id", "job_id"],
+            ["sim.jobs.organization_id", "sim.jobs.id"],
+            name="fk_results_job",
+        ),
+        {"schema": SCHEMA},
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, server_default=text("uuidv7()"))
+    organization_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+    job_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+    document: Mapped[str] = mapped_column(Text)
+    document_hash: Mapped[str] = mapped_column(Text)
+    result_hash: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=text("now()")
+    )

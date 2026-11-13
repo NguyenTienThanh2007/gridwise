@@ -77,8 +77,8 @@ from before the roles existed, or you change a password in `.env`, run `make res
    `models/__init__.py`.
 2. If it lives in a new schema, add the schema to `MANAGED_SCHEMAS` in `models/base.py`.
 3. From `apps/api`:
-   `uv run alembic revision --autogenerate --rev-id 0002 -m "describe the change"`
-   (revision IDs are sequential four-digit numbers).
+   `uv run alembic revision --autogenerate --rev-id 0005 -m "describe the change"`
+   (revision IDs are sequential four-digit numbers; use the next one after the current head).
 4. Review the generated file by hand and write a real `downgrade`. Then add what
    autogenerate cannot see (decision 0006):
    - `GRANT` to `gridwise_app` only the privileges the API needs on the new objects;
@@ -110,8 +110,24 @@ real grid, and it contains no measurements.
   that setting only in `local` and `test`. It selects a tenant; it is not a credential and
   protects nothing ([decision 0008](../decisions/0008-grid-persistence-and-development-tenant.md)).
 
-A database created before P1.2b is at revision `0001`: run `make migrate` first. Until then
-the API's readiness check reports `schema_mismatch`.
+After pulling new migrations, run `make migrate` (the head is `0004`). Until then the API's
+readiness check reports `schema_mismatch`, and the worker refuses to start.
+
+## The simulation worker
+
+The worker solves queued simulation jobs (decision 0011). It is optional:
+
+| Command          | Does                                                        |
+| ---------------- | ----------------------------------------------------------- |
+| `make up-worker` | The usual stack plus the worker container (768 MB, one CPU) |
+| `make worker`    | The worker on the host, against the database in `.env`      |
+
+It connects as `gridwise_worker` (`GRIDWISE_WORKER_DATABASE_URL`), which may only run the
+five worker functions. A database volume created before P1.3b does not have that role:
+run `make db-worker-role` once (it changes nothing if the role exists), then `make migrate`.
+
+`docker compose --profile worker stop worker` sends SIGTERM: the worker stops claiming,
+lets the current job finish for up to 20 seconds, and otherwise hands it back to the queue.
 
 ## Trying the grid API
 

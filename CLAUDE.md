@@ -13,9 +13,12 @@ distribution networks. Phases and acceptance criteria are in `docs/ROADMAP.md`.
   `make seed-demo`) is merged** (PR 9). Design: decision 0008.
 - **P1.2c (grid API under `/api/v1/grids`) is merged** (PR 10). Design: decision 0009.
 - **P1.3a (simulation domain: `sim` schema, snapshots, scenarios, job lifecycle, submission
-  service):** implementation complete; pending review, CI verification and merge. Design:
-  decision 0010, `docs/domain/simulation.md`.
-- **Next:** P1.3b worker, once approved. Do not start a milestone without owner approval.
+  service) is merged** (PR 11; CI run 43419018212 green). Design: decision 0010,
+  `docs/domain/simulation.md`.
+- **P1.3b (worker: `apps/worker`, five worker functions, `sim.results`, Compose profile
+  `worker`):** implementation complete; pending review, CI verification and merge. Design:
+  decision 0011.
+- **Next:** P1.3c, once approved. Do not start a milestone without owner approval.
 
 ## Hard boundaries
 
@@ -29,8 +32,10 @@ distribution networks. Phases and acceptance criteria are in `docs/ROADMAP.md`.
 - Tenant data is reached only through `tenancy.tenant_transaction`. Never set tenant
   context with a session-level `SET`, never from a request value, never weaken a policy.
 - Simulations solve immutable snapshots, never the live grid. Never update a snapshot, a
-  submitted job column or a terminal job; the database refuses it anyway. Only the worker
-  package may import the solver adapter.
+  submitted job column or a terminal job; the database refuses it anyway. Only the worker's
+  child process (`gridwise_worker/child.py`) may import the solver adapter.
+- The worker role has no table privileges. Change what it can do only through the worker
+  functions (migration 0004 onwards), never by granting it table access.
 - Bump the engine `__version__` whenever a recorded regression hash changes.
 - A new API route must be added to the allow-list in `tests/unit/test_system.py`. Platform
   endpoints stay read-only; grid writes change stored simulation data only.

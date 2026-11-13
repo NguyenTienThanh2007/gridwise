@@ -68,7 +68,7 @@ Deviation from the plan: criterion 3 was planned as a comparison with published 
 results. No citable table could be retrieved, so it is an equation check instead; see
 `docs/domain/grid-engine.md`, "Reference networks".
 
-#### P1.2b — Database (implementation complete; pending review, CI verification and merge)
+#### P1.2b — Database (merged, pull request 9)
 
 Design: [decision 0008](decisions/0008-grid-persistence-and-development-tenant.md).
 
@@ -86,7 +86,7 @@ Design: [decision 0008](decisions/0008-grid-persistence-and-development-tenant.m
 | 10  | The development tenant needs both an allowed environment and an explicit setting                                         | `test_tenancy.py`                                 |
 | 11  | All earlier checks still pass                                                                                            | CI                                                |
 
-#### P1.2c — Grid API (implementation complete; pending review, CI verification and merge)
+#### P1.2c — Grid API (merged, pull request 10)
 
 Design: [decision 0009](decisions/0009-grid-api-contract.md).
 
@@ -113,7 +113,7 @@ renewable generation); job lifecycle; a separate worker; `sim` schema; results A
 input snapshots and hashes. Design: [decision 0010](decisions/0010-simulation-domain-and-job-lifecycle.md)
 and [docs/domain/simulation.md](domain/simulation.md).
 
-#### P1.3a — Simulation domain and job lifecycle (implementation complete; pending review, CI verification and merge)
+#### P1.3a — Simulation domain and job lifecycle (merged, pull request 11)
 
 | #   | Acceptance criterion                                                                                             | Evidence                                              |
 | --- | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
@@ -132,9 +132,31 @@ and [docs/domain/simulation.md](domain/simulation.md).
 | 13  | Submission never loads the solver                                                                                | `test_simulation_submission.py`                       |
 | 14  | The migration downgrades with data and upgrades again; all earlier checks pass                                   | `test_migrations.py`, CI                              |
 
-#### P1.3b — Worker and process pool (not started)
+CI run 43419018212 on the merge commit passed all five jobs: engine 422, API unit 166 and
+integration 534 tests.
 
-#### P1.3c — Results and reproducibility (not started)
+#### P1.3b — Worker (implementation complete; pending review, CI verification and merge)
+
+Design: [decision 0011](decisions/0011-simulation-worker.md).
+
+| #   | Acceptance criterion                                                                                                                 | Evidence                                            |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------- |
+| 1   | Concurrent workers never claim the same job; jobs are taken oldest first across tenants                                              | `test_worker_functions.py`                          |
+| 2   | The worker role reads and writes no table; only it may run the worker functions, which are definer-safe                              | `test_worker_functions.py`, `test_roles.py`         |
+| 3   | Calls about a job need its tenant context and its live lease; a stale worker changes nothing                                         | `test_worker_functions.py`                          |
+| 4   | Expired leases are requeued with the attempt recorded; after the last attempt the job fails `worker_lost`                            | `test_worker_functions.py`                          |
+| 5   | Heartbeats extend only a live lease held by the caller                                                                               | `test_worker_functions.py`                          |
+| 6   | Completion stores the result and the terminal state together; non-convergence stores no result                                       | `test_worker_functions.py`                          |
+| 7   | Failure messages can only be catalogue entries                                                                                       | `test_worker_functions.py`                          |
+| 8   | A solved job's stored result is reproduced from its stored input alone                                                               | `test_worker_process.py`                            |
+| 9   | A timeout kills the solver process; a dying solver is retried, then reported lost                                                    | `test_worker_process.py`                            |
+| 10  | SIGTERM: idle exit, a short job finishes, a long one is released; SIGKILL: the next worker recovers it and the orphaned solver exits | `test_worker_process.py`                            |
+| 11  | An unreachable database is waited for; a mismatched schema stops the worker                                                          | `test_worker_process.py`                            |
+| 12  | Neither the API nor the worker parent loads the solver                                                                               | `test_import_boundary.py`, `test_worker_process.py` |
+| 13  | The deployed worker solves a submitted job and stops cleanly on SIGTERM                                                              | CI job "Worker"                                     |
+| 14  | All earlier checks still pass                                                                                                        | CI                                                  |
+
+#### P1.3c — Reproducibility checks, result summaries, retention (not started)
 
 #### P1.3d — Simulation API (not started)
 

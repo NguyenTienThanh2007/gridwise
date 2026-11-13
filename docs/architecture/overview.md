@@ -95,10 +95,21 @@ worker (P1.3b, separate service) claims jobs, solves the input snapshot ─┘
   checks), jobs and their attempts, all tenant-owned with row-level security.
 - The job lifecycle is enforced by a trigger for every role; the API role may only cancel a
   queued job.
-- Nothing runs queued jobs yet, and no power flow runs in the API process.
+- No power flow runs in the API process; the worker (below) runs queued jobs.
 
 Details: [decision 0010](../decisions/0010-simulation-domain-and-job-lifecycle.md) and
 [simulation.md](../domain/simulation.md).
+
+### Simulation worker (P1.3b)
+
+```
+worker container (profile "worker", 768 MB)
+  parent: claim ─ heartbeat ─ complete / fail / release   ── only the five sim.*_job functions
+     │ Pipe                                                     (role gridwise_worker, no table access)
+  child (spawn): verify snapshot hash ─ run_power_flow     ── the only process with pandapower
+```
+
+Details: [decision 0011](../decisions/0011-simulation-worker.md).
 
 ### API layering
 

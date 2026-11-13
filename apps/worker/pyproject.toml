@@ -1,0 +1,24 @@
+[project]
+name = "gridwise-worker"
+version = "0.1.0"
+description = "GRIDWISE simulation worker: solves queued simulation jobs (decision 0011)."
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    # Settings, logging and the schema revision are shared with the API. The API never
+    # imports this package (enforced by test_import_boundary.py).
+    "gridwise-api",
+    "gridwise-grid-engine",
+    "psycopg[binary]>=3.3,<4",
+    "sqlalchemy>=2.1.8,<2.2",
+]
+
+[tool.uv.sources]
+gridwise-api = { workspace = true }
+gridwise-grid-engine = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/gridwise_worker"]
