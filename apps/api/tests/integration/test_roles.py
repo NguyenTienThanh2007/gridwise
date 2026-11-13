@@ -118,6 +118,32 @@ def test_runtime_role_has_exactly_the_granted_privileges(admin_engine: Engine) -
                 for privilege in ("DELETE", "INSERT", "SELECT", "UPDATE")
             ),
             "public.alembic_version:SELECT",
+            "sim.job_attempts:SELECT",
+            "sim.job_transitions:SELECT",
+            "sim.jobs:INSERT",
+            "sim.jobs:SELECT",
+            "sim.scenarios:DELETE",
+            "sim.scenarios:INSERT",
+            "sim.scenarios:SELECT",
+            "sim.snapshots:INSERT",
+            "sim.snapshots:SELECT",
+        ]
+
+        # Column-level: the API may change a job's status only to cancel it (the lifecycle
+        # trigger refuses every other move for this role).
+        columns = connection.execute(
+            text(
+                "SELECT table_schema || '.' || table_name || '.' || column_name || ':' || "
+                "privilege_type FROM information_schema.role_column_grants "
+                "WHERE grantee = :role AND privilege_type = 'UPDATE' "
+                "AND table_schema = 'sim' ORDER BY 1"
+            ),
+            {"role": APP_ROLE},
+        ).scalars()
+        assert list(columns) == [
+            "sim.jobs.cancelled_at:UPDATE",
+            "sim.jobs.finished_at:UPDATE",
+            "sim.jobs.status:UPDATE",
         ]
 
         schema_privileges = connection.execute(
@@ -126,11 +152,13 @@ def test_runtime_role_has_exactly_the_granted_privileges(admin_engine: Engine) -
                 "has_schema_privilege(:role, 'core', 'CREATE'), "
                 "has_schema_privilege(:role, 'public', 'CREATE'), "
                 "has_schema_privilege(:role, 'grid', 'USAGE'), "
-                "has_schema_privilege(:role, 'grid', 'CREATE')"
+                "has_schema_privilege(:role, 'grid', 'CREATE'), "
+                "has_schema_privilege(:role, 'sim', 'USAGE'), "
+                "has_schema_privilege(:role, 'sim', 'CREATE')"
             ),
             {"role": APP_ROLE},
         ).one()
-        assert tuple(schema_privileges) == (True, False, False, True, False)
+        assert tuple(schema_privileges) == (True, False, False, True, False, True, False)
 
         # Privileges that information_schema.role_table_grants would also list, stated
         # explicitly because they would defeat the design: no TRUNCATE (it ignores
@@ -164,6 +192,16 @@ def test_runtime_role_can_do_what_the_api_needs(app_engine: Engine) -> None:
         "DROP POLICY organization_is_current_tenant ON core.organizations",
         "CREATE TABLE core.sneaky (id int)",
         "CREATE TABLE grid.sneaky (id int)",
+        "CREATE TABLE sim.sneaky (id int)",
+        "TRUNCATE sim.snapshots",
+        "DROP TRIGGER lifecycle ON sim.jobs",
+        "ALTER TABLE sim.jobs DISABLE TRIGGER lifecycle",
+        "ALTER TABLE sim.snapshots DISABLE ROW LEVEL SECURITY",
+        "DROP POLICY tenant_isolation ON sim.jobs",
+        "UPDATE sim.snapshots SET element_count = 0",
+        "DELETE FROM sim.snapshots",
+        "DELETE FROM sim.jobs",
+        "UPDATE sim.jobs SET worker_id = 'me'",
         "TRUNCATE grid.grids CASCADE",
         "TRUNCATE grid.buses CASCADE",
         "ALTER TABLE grid.grids DISABLE ROW LEVEL SECURITY",

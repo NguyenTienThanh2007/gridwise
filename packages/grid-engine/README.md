@@ -13,6 +13,9 @@ results.py      result models
 hashing.py      canonical input and result hashes
 adapters/       the only code that imports pandapower
 reference_grids/  published benchmark networks as plain data (synthetic, not real grids)
+snapshots.py    a grid as canonical text whose hash is its grid_hash, and back
+scenarios.py    deterministic modifications of a copy of a grid; five presets
+fingerprint.py  hashes of the numerical configuration and of the engine that ran it
 ```
 
 Model, equations, error codes and limits: `docs/domain/grid-engine.md`.

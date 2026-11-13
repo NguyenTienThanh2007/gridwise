@@ -155,6 +155,17 @@ def test_negative_zero_and_zero_hash_the_same(solver: PandapowerSolver) -> None:
 # A regression value for a network with every element type (recorded on macOS arm64).
 CIGRE_RESULT_HASH = "988d097750399508dfafb5b35f63a0c49dc29edd4571211baeae222b941c283e"
 
+#: The engine version these regression hashes belong to. Changing a recorded hash means the
+#: engine computes something different, which a new engine version must announce: simulation
+#: jobs record the engine version in their fingerprint.
+GOLDEN_HASHES_ENGINE_VERSION = "0.3.0"
+
+
+def test_the_regression_hashes_belong_to_this_engine_version() -> None:
+    from gridwise_grid_engine import __version__
+
+    assert __version__ == GOLDEN_HASHES_ENGINE_VERSION
+
 
 def test_the_benchmark_network_hash_is_stable_across_platforms(solver: PandapowerSolver) -> None:
     assert result_hash(run_power_flow(cigre_mv.cigre_mv_with_der(), solver)) == CIGRE_RESULT_HASH

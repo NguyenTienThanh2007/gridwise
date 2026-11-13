@@ -241,6 +241,23 @@ async def lock_grid(session: TenantSession, grid_id: UUID) -> GridRecord | None:
     return _record(row) if row is not None else None
 
 
+async def share_lock_grid(session: TenantSession, grid_id: UUID) -> GridRecord | None:
+    """Read a grid and hold a share lock on its row until the transaction ends.
+
+    Writers to the grid wait (they take ``FOR UPDATE``); other readers and share-lockers do
+    not. A simulation submission uses it so the topology it copies cannot change while it
+    is being copied.
+    """
+    row = (
+        await session.execute(
+            select(_GRIDS)
+            .where(_GRIDS.c.organization_id == session.organization_id, _GRIDS.c.id == grid_id)
+            .with_for_update(read=True)
+        )
+    ).one_or_none()
+    return _record(row) if row is not None else None
+
+
 async def save_grid_header(
     session: TenantSession,
     grid_id: UUID,

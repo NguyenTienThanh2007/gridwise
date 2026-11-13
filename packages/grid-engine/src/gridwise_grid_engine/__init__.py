@@ -38,7 +38,7 @@ from gridwise_grid_engine.solver import PowerFlowOptions, PowerFlowSolver, RawSo
 from gridwise_grid_engine.topology import Energization, analyze_energization, energized_bus_ids
 from gridwise_grid_engine.validation import ensure_valid, validate_grid
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 __all__ = [
     "Bus",
