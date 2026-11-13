@@ -3,7 +3,7 @@ name = "gridwise"
 version = "0.1.0"
 description = "GRIDWISE workspace root (not a distributable package)."
 requires-python = ">=3.13,<3.14"
-dependencies = ["gridwise-api", "gridwise-grid-engine"]
+dependencies = ["gridwise-api", "gridwise-grid-engine", "gridwise-worker"]
 
 [dependency-groups]
 dev = [
@@ -21,9 +21,10 @@ package = false
 [tool.uv.sources]
 gridwise-api = { workspace = true }
 gridwise-grid-engine = { workspace = true }
+gridwise-worker = { workspace = true }
 
 [tool.uv.workspace]
-members = ["apps/api", "packages/grid-engine"]
+members = ["apps/api", "apps/worker", "packages/grid-engine"]
 
 [tool.ruff]
 line-length = 100
@@ -35,12 +36,14 @@ select = ["E", "F", "W", "I", "B", "UP", "N", "S", "C4", "SIM", "RUF", "ASYNC", 
 
 [tool.ruff.lint.per-file-ignores]
 "**/tests/**" = ["S101"]
-"**/migrations/**" = ["N999"]
+# Migrations build SQL from module constants only; no input reaches it.
+# RUF100: merged migrations are never edited, so their old noqa comments stay.
+"**/migrations/**" = ["N999", "S608", "RUF100"]
 # A command-line smoke test: printing is its output.
 "**/selfcheck.py" = ["T20"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["gridwise_api", "gridwise_grid_engine"]
+known-first-party = ["gridwise_api", "gridwise_grid_engine", "gridwise_worker"]
 
 [tool.mypy]
 python_version = "3.13"
@@ -50,10 +53,11 @@ files = [
     "apps/api/src",
     "apps/api/tests",
     "apps/api/migrations",
+    "apps/worker/src",
     "packages/grid-engine/src",
     "packages/grid-engine/tests",
 ]
-mypy_path = ["apps/api/src", "apps/api", "packages/grid-engine/src"]
+mypy_path = ["apps/api/src", "apps/api", "apps/worker/src", "packages/grid-engine/src"]
 explicit_package_bases = true
 
 [[tool.mypy.overrides]]
@@ -66,10 +70,11 @@ ignore_missing_imports = true
 testpaths = ["apps/api/tests", "packages/grid-engine/tests"]
 # Explicit, so tests do not depend on the editable-install .pth file: macOS can flag that
 # file hidden, and Python 3.13 ignores hidden .pth files.
-pythonpath = ["apps/api/src", "apps/api", "packages/grid-engine/src"]
+pythonpath = ["apps/api/src", "apps/api", "apps/worker/src", "packages/grid-engine/src"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 addopts = "-ra --strict-markers --strict-config"
 markers = [
     "integration: needs a running PostgreSQL (GRIDWISE_DATABASE_URL)",
+    "worker: starts real worker processes (Linux and macOS process semantics)",
 ]

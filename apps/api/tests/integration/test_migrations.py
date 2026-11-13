@@ -128,8 +128,8 @@ def test_a_downgrade_with_data_removes_the_data_and_upgrades_cleanly(
 def test_the_api_expects_the_head_revision(alembic_config: Config) -> None:
     from gridwise_api.schema_version import EXPECTED_SCHEMA_REVISION
 
-    assert ScriptDirectory.from_config(alembic_config).get_current_head() == "0003"
-    assert EXPECTED_SCHEMA_REVISION == "0003"
+    assert ScriptDirectory.from_config(alembic_config).get_current_head() == "0004"
+    assert EXPECTED_SCHEMA_REVISION == "0004"
 
 
 def test_migrations_cannot_be_run_by_the_runtime_role(
@@ -254,6 +254,18 @@ async def test_the_sim_schema_downgrades_with_data_and_upgrades_again(
     finally:
         await engine.dispose()
 
+    command.downgrade(alembic_config, "0003")
+    with owner_engine.connect() as connection:  # the worker layer is gone, the job is kept
+        assert connection.execute(text("SELECT count(*) FROM sim.jobs")).scalar_one() == 1
+        assert (
+            connection.execute(
+                text(
+                    "SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace "
+                    "WHERE n.nspname = 'sim' AND p.proname LIKE '%_job'"
+                )
+            ).scalar_one()
+            == 0
+        )
     command.downgrade(alembic_config, "0002")
     inspector = inspect(owner_engine)
     assert "sim" not in inspector.get_schema_names()

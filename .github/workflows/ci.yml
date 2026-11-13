@@ -37,7 +37,8 @@ jobs:
       - name: Unit tests
         run: uv run pytest apps/api/tests -m "not integration"
       - name: Integration tests (real PostgreSQL)
-        run: uv run pytest apps/api/tests -m integration
+        # Worker process tests run in the Worker job.
+        run: uv run pytest apps/api/tests -m "integration and not worker"
       - name: Database logs
         if: failure()
         run: docker compose logs --no-color postgres
@@ -111,6 +112,35 @@ jobs:
           name: playwright-report
           path: apps/web/playwright-report
           retention-days: 7
+
+  worker:
+    name: Worker (Linux, Compose)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: cp .env.example .env
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - run: uv sync --frozen
+      - name: Start postgres, migrations, API and worker (the worker profile)
+        run: docker compose --profile worker up -d --build --wait
+      - name: Worker processes against the database (kill, timeout, signals)
+        run: uv run pytest -m worker apps/api/tests
+      - name: The deployed worker solves a submitted job
+        run: |
+          job=$(uv run python scripts/worker_smoke.py submit | tail -1)
+          uv run python scripts/worker_smoke.py wait "$job" 180
+      - name: The worker stops cleanly on SIGTERM
+        run: |
+          docker compose --profile worker stop -t 30 worker
+          status=$(docker inspect --format '{{.State.ExitCode}}' "$(docker compose --profile worker ps -aq worker)")
+          echo "worker exit code: $status"
+          test "$status" = "0"
+      - name: Stack logs
+        if: failure()
+        run: docker compose --profile worker logs --no-color
 
   audit:
     name: Dependency audit

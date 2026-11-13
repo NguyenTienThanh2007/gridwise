@@ -73,13 +73,18 @@ def complete(connection: Connection, job_id: uuid.UUID, *, outcome: str = "conve
 
 
 def fail(connection: Connection, job_id: uuid.UUID, *, code: str = "solver_failed") -> None:
+    """running -> failed, with the catalogue's message for the code (as the database
+    requires since migration 0004)."""
+    from gridwise_api.simulation.failures import FAILURE_MESSAGES
+
+    message = {key.value: value for key, value in FAILURE_MESSAGES.items()}.get(code, "unknown")
     connection.execute(
         text(
             "UPDATE sim.jobs SET status = 'failed', failure_code = :code, "
-            "failure_message = 'catalogue message', lease_token = NULL, "
+            "failure_message = :message, lease_token = NULL, "
             "lease_expires_at = NULL, worker_id = NULL, finished_at = now() WHERE id = :id"
         ),
-        {"id": job_id, "code": code},
+        {"id": job_id, "code": code, "message": message},
     )
 
 

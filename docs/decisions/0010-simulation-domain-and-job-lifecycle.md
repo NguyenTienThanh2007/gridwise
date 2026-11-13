@@ -102,9 +102,9 @@ changes whenever a recorded regression hash changes; a test ties the two togethe
 
 Scenarios, snapshots, jobs and attempts are tenant-owned, with the same row-level security
 policy as the grid schema, composite foreign keys, and `organization_id` first in every
-unique constraint. `job_transitions` is reference data. The worker (P1.3b) gets its own role
-without `BYPASSRLS`, and reaches jobs of all tenants only through one claim function, then
-works under the job's tenant context.
+unique constraint. `job_transitions` is reference data. The worker gets its own role
+without `BYPASSRLS` and no table privileges; it reaches jobs only through five functions
+that check its lease and the job's tenant context (decision 0011).
 
 ## Deviations from the approved plan
 
@@ -119,6 +119,7 @@ works under the job's tenant context.
 
 ## Consequences
 
-- Before P1.3b nothing runs queued jobs. Jobs can be submitted, read and cancelled.
-- A new database role arrives with P1.3b; existing local volumes will need it created.
+- Since P1.3b the worker runs queued jobs (decision 0011).
+- The worker role arrived with P1.3b; existing local volumes create it with
+  `make db-worker-role`.
 - Snapshots grow with every distinct submitted grid; retention is not decided yet.

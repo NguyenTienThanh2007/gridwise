@@ -4,6 +4,9 @@
 2. The engine imports no web, database or frontend-serving library.
 3. Importing the engine (models, validation, results) does not load pandapower.
 4. The API never imports pandapower or the adapter: power flows run in a worker process.
+5. The API never imports the worker.
+6. In the worker, only the solver child process (``child.py``) imports the adapter; the
+   parent process that talks to the database never loads a numerical library.
 """
 
 import ast
@@ -18,6 +21,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 ENGINE_SRC = REPO_ROOT / "packages/grid-engine/src"
 ENGINE_PACKAGE = ENGINE_SRC / "gridwise_grid_engine"
 API_PACKAGE = REPO_ROOT / "apps/api/src/gridwise_api"
+WORKER_PACKAGE = REPO_ROOT / "apps/worker/src/gridwise_worker"
 
 ADAPTER = ENGINE_PACKAGE / "adapters/pandapower_adapter.py"
 ADAPTER_MODULE = "gridwise_grid_engine.adapters.pandapower_adapter"
@@ -137,6 +141,33 @@ def test_importing_the_adapter_is_what_loads_pandapower() -> None:
     "path", python_files(API_PACKAGE), ids=lambda p: str(p.relative_to(API_PACKAGE))
 )
 def test_the_api_never_imports_pandapower_or_the_adapter(path: Path) -> None:
+    modules = imported_modules(path)
+    assert top_level(modules) & NUMERIC_LIBRARIES == set()
+    assert not any(module.startswith("gridwise_grid_engine.adapters") for module in modules)
+
+
+@pytest.mark.parametrize(
+    "path", python_files(API_PACKAGE), ids=lambda p: str(p.relative_to(API_PACKAGE))
+)
+def test_the_api_never_imports_the_worker(path: Path) -> None:
+    assert "gridwise_worker" not in top_level(imported_modules(path))
+
+
+def test_only_the_solver_child_imports_the_adapter_in_the_worker() -> None:
+    importers = {
+        str(path.relative_to(WORKER_PACKAGE))
+        for path in python_files(WORKER_PACKAGE)
+        if ADAPTER_MODULE in imported_modules(path)
+    }
+    assert importers == {"child.py"}
+
+
+@pytest.mark.parametrize(
+    "path",
+    [p for p in python_files(WORKER_PACKAGE) if p.name != "child.py"],
+    ids=lambda p: str(p.relative_to(WORKER_PACKAGE)),
+)
+def test_the_worker_parent_imports_no_numerical_library(path: Path) -> None:
     modules = imported_modules(path)
     assert top_level(modules) & NUMERIC_LIBRARIES == set()
     assert not any(module.startswith("gridwise_grid_engine.adapters") for module in modules)

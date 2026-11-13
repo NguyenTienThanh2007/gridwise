@@ -16,6 +16,7 @@ reference_grids/  published benchmark networks as plain data (synthetic, not rea
 snapshots.py    a grid as canonical text whose hash is its grid_hash, and back
 scenarios.py    deterministic modifications of a copy of a grid; five presets
 fingerprint.py  hashes of the numerical configuration and of the engine that ran it
+result_documents.py  a converged result as canonical text, as simulations store it
 ```
 
 Model, equations, error codes and limits: `docs/domain/grid-engine.md`.

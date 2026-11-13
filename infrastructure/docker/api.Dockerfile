@@ -11,12 +11,16 @@ WORKDIR /src
 # Dependencies first, so source edits do not invalidate this layer.
 COPY pyproject.toml uv.lock .python-version ./
 COPY apps/api/pyproject.toml apps/api/pyproject.toml
+COPY apps/worker/pyproject.toml apps/worker/pyproject.toml
 COPY packages/grid-engine/pyproject.toml packages/grid-engine/pyproject.toml
-RUN uv sync --frozen --no-dev --no-install-workspace --package gridwise-api
+# The worker package depends on the API package, so this installs both: one image serves
+# the API, the migrations and the simulation worker (decision 0011).
+RUN uv sync --frozen --no-dev --no-install-workspace --package gridwise-worker
 
 COPY apps/api apps/api
+COPY apps/worker apps/worker
 COPY packages/grid-engine packages/grid-engine
-RUN uv sync --frozen --no-dev --no-editable --package gridwise-api
+RUN uv sync --frozen --no-dev --no-editable --package gridwise-worker
 
 # The scientific packages ship their own test suites (about 90 MB). Nothing imports them
 # at runtime; the image's self-check and the end-to-end job verify that after this step.

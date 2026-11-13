@@ -38,7 +38,7 @@ Everything in the first five groups is frozen by the database once the job exist
 
 | From → to             | By                     | When                                                                             |
 | --------------------- | ---------------------- | -------------------------------------------------------------------------------- |
-| `queued → running`    | worker (P1.3b)         | it claims the job and takes a lease                                              |
+| `queued → running`    | worker                 | it claims the job and takes a lease                                              |
 | `running → running`   | worker                 | heartbeat: the lease is extended                                                 |
 | `running → completed` | worker                 | the power flow finished; outcome `converged` or `not_converged`                  |
 | `running → failed`    | worker or lease reaper | the computation could not be trusted, or the worker was lost on the last attempt |
@@ -67,9 +67,18 @@ Take the job's input snapshot, verify its hash, and run `run_power_flow` with th
 configuration. The `result_hash` must equal the stored one (P1.3c). Scenario code is not
 involved: the input snapshot already is the scenario's result.
 
+## The worker
+
+`python -m gridwise_worker` (Compose profile `worker`) solves queued jobs. It reaches the
+database only through the five worker functions, and runs the solver in a child process it
+can kill. Rules and defaults: decision 0011.
+
+A converged job has one row in `sim.results`: the engine's full result as canonical text,
+written in the same transaction as the job's completion. A job that did not converge has
+none.
+
 ## Limits
 
-- Nothing runs queued jobs until the worker exists (P1.3b).
 - Snapshots are kept indefinitely; there is no retention rule yet.
 - There is no per-tenant queue fairness yet.
 - Cancelling a running job is not supported.
