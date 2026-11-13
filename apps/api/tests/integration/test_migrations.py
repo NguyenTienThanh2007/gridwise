@@ -128,8 +128,8 @@ def test_a_downgrade_with_data_removes_the_data_and_upgrades_cleanly(
 def test_the_api_expects_the_head_revision(alembic_config: Config) -> None:
     from gridwise_api.schema_version import EXPECTED_SCHEMA_REVISION
 
-    assert ScriptDirectory.from_config(alembic_config).get_current_head() == "0002"
-    assert EXPECTED_SCHEMA_REVISION == "0002"
+    assert ScriptDirectory.from_config(alembic_config).get_current_head() == "0003"
+    assert EXPECTED_SCHEMA_REVISION == "0003"
 
 
 def test_migrations_cannot_be_run_by_the_runtime_role(
@@ -235,3 +235,41 @@ def test_migrations_refuse_to_run_as_a_superuser(
     with pytest.raises(RuntimeError, match="superuser"):
         command.upgrade(alembic_config, "head")
     assert "core" not in inspect(admin_engine).get_schema_names()
+
+
+async def test_the_sim_schema_downgrades_with_data_and_upgrades_again(
+    alembic_config: Config, owner_engine: Engine, database: TestDatabase
+) -> None:
+    from sqlalchemy.ext.asyncio import create_async_engine
+
+    from tests.support.simulations import service, stored_grid
+
+    command.upgrade(alembic_config, "head")
+    with owner_engine.begin() as connection:
+        organization = connection.execute(INSERT_ORG, {"name": "Demo", "slug": "demo"}).scalar_one()
+    engine = create_async_engine(database.app_url)
+    try:
+        grid_id = await stored_grid(engine, organization)
+        await service(engine).submit(organization, grid_id)
+    finally:
+        await engine.dispose()
+
+    command.downgrade(alembic_config, "0002")
+    inspector = inspect(owner_engine)
+    assert "sim" not in inspector.get_schema_names()
+    with owner_engine.connect() as connection:
+        assert connection.execute(text("SELECT count(*) FROM grid.grids")).scalar_one() == 1
+        functions = connection.execute(
+            text(
+                "SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace "
+                "WHERE n.nspname = 'sim'"
+            )
+        ).scalar_one()
+    assert functions == 0
+
+    command.upgrade(alembic_config, "head")
+    with owner_engine.connect() as connection:
+        assert connection.execute(text("SELECT count(*) FROM sim.jobs")).scalar_one() == 0
+        assert (
+            connection.execute(text("SELECT count(*) FROM sim.job_transitions")).scalar_one() == 6
+        )

@@ -79,7 +79,12 @@ to 1e-6. P1.3 stores both with every run, plus a full input snapshot and the eng
 solver versions, so a stored result can be recomputed and compared after the topology has
 changed.
 
-### 7. Execution: a process pool inside the API container — P1.3
+### 7. Execution: a process pool inside the API container — superseded by 0010
+
+**Superseded (P1.3a):** solves run in a separate worker service that claims jobs from the
+database, not in a pool owned by the API container. See
+[decision 0010](0010-simulation-domain-and-job-lifecycle.md). The original reasoning is
+kept below.
 
 Solving is CPU-bound and holds the interpreter lock, and loading the solver is slow and
 large. Power flows will run in a small `ProcessPoolExecutor` owned by the API container;

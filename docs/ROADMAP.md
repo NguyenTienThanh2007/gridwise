@@ -109,8 +109,34 @@ Design: [decision 0009](decisions/0009-grid-api-contract.md).
 ### P1.3 — Simulation
 
 The five scenarios (normal operation, demand increase, transformer overload, feeder outage,
-renewable generation); run lifecycle on a process pool; `sim` schema; results API; stored
-input snapshots and hashes.
+renewable generation); job lifecycle; a separate worker; `sim` schema; results API; stored
+input snapshots and hashes. Design: [decision 0010](decisions/0010-simulation-domain-and-job-lifecycle.md)
+and [docs/domain/simulation.md](domain/simulation.md).
+
+#### P1.3a — Simulation domain and job lifecycle (implementation complete; pending review, CI verification and merge)
+
+| #   | Acceptance criterion                                                                                             | Evidence                                              |
+| --- | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| 1   | Every pair of job states is legal or refused identically in Python and in the database                           | `test_simulation_domain.py`, `test_sim_schema.py`     |
+| 2   | Terminal jobs and submitted columns cannot change for any role; snapshots and scenarios are immutable            | `test_sim_schema.py`                                  |
+| 3   | A snapshot reads back as the same grid, its hash is the grid hash, and damaged content cannot be stored          | `test_snapshots.py`, `test_sim_schema.py`             |
+| 4   | Submission captures the grid version and hash; base and input snapshots are stored; the stored grid is untouched | `test_simulation_submission.py`                       |
+| 5   | A grid write and a submission never interleave: each waits for the other                                         | `test_simulation_submission.py`                       |
+| 6   | Stale version, missing scenario keys and a scenario that breaks the grid are refused and store nothing           | `test_simulation_submission.py`                       |
+| 7   | Each scenario modification behaves as specified, deterministically; invalid documents are refused                | `test_scenarios.py`                                   |
+| 8   | Idempotency keys return the first job, refuse a different request, and hold under concurrency                    | `test_simulation_submission.py`                       |
+| 9   | Deleting the grid or scenario keeps the job, its snapshots and its specification                                 | `test_simulation_submission.py`                       |
+| 10  | Row-level security on every sim table; no cross-tenant reads, writes or references                               | `test_sim_schema.py`, `test_simulation_submission.py` |
+| 11  | Exact grants; the API role can only submit and cancel a queued job                                               | `test_roles.py`, `test_sim_schema.py`                 |
+| 12  | Failure codes come from the catalogue only                                                                       | `test_simulation_domain.py`, `test_sim_schema.py`     |
+| 13  | Submission never loads the solver                                                                                | `test_simulation_submission.py`                       |
+| 14  | The migration downgrades with data and upgrades again; all earlier checks pass                                   | `test_migrations.py`, CI                              |
+
+#### P1.3b — Worker and process pool (not started)
+
+#### P1.3c — Results and reproducibility (not started)
+
+#### P1.3d — Simulation API (not started)
 
 ### P1.4 — Web
 

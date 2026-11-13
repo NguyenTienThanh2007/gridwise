@@ -285,6 +285,64 @@ Stable: a code is never renamed or reused. A test fails if this table and the co
 | `solver_failed`                             | The solver raised an unexpected error                                                                       |
 | `inconsistent_solution`                     | The solver's answer failed a consistency check                                                              |
 
+## Snapshots
+
+A snapshot is a grid as canonical text (`snapshots.snapshot_text`): the exact document that
+`grid_hash` hashes, schema `gridwise.grid/2`. So `sha256(text) == grid_hash(grid)`, and a
+reader can check a snapshot without trusting where it came from. `grid_from_snapshot`
+refuses text that does not match its expected hash, is not this schema, or is not in
+canonical form. Simulations store their input as snapshots and never change them.
+
+Diagram positions are not part of a snapshot: they are not electrical.
+
+## Scenarios
+
+A scenario (`scenarios.py`, document schema `gridwise.scenario/1`) is an ordered list of
+modifications applied to a copy of a grid before it is simulated. The stored grid is never
+changed. The same scenario on the same grid always gives the same model.
+
+| Modification       | Effect                                                                                                                                          |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scale_loads`      | Multiply `p_mw` and `q_mvar` of all loads, or of `keys`. `0 < factor ≤ 100`                                                                     |
+| `scale_generation` | Multiply `p_mw` of all generators, or of `keys`, optionally of one `control_mode`; constant-power units also scale `q_mvar`. `0 ≤ factor ≤ 100` |
+| `set_in_service`   | Take one bus, line, transformer, load, generator or external grid in or out of service                                                          |
+| `set_switch`       | Set one switch's position in the simulated copy                                                                                                 |
+
+Every key a scenario names must exist in the grid; otherwise nothing is applied and every
+missing key is reported. A scenario may produce a grid the engine refuses (for example
+scaling a unit beyond its rating, or taking out the only source): the result is validated
+like any other grid.
+
+Five presets cover the roadmap's study cases: `normal_operation`, `demand_increase` (loads
+× 1.2), `transformer_overload` (loads × 1.6), `feeder_outage` (one line out of service) and
+`renewable_generation` (constant-power units at their set-point, loads × 0.5). The factors
+are illustrative study assumptions, not measured or forecast values.
+
+Setting a switch in a scenario changes the simulated copy only. Nothing reaches equipment.
+
+## Scenario error codes
+
+Stable, like the grid error codes. A test fails if this table and the code differ.
+
+| Code                            | Raised when                                                                |
+| ------------------------------- | -------------------------------------------------------------------------- |
+| `invalid_scenario_document`     | Not a `gridwise.scenario/1` document, or a modification has unknown fields |
+| `unknown_modification`          | A modification's `type` is not one of the four                             |
+| `too_many_modifications`        | More than 200 modifications                                                |
+| `invalid_scale_factor`          | A factor is not a finite number in its range                               |
+| `invalid_scenario_element_type` | `set_in_service` names an element type it cannot change                    |
+| `invalid_scenario_key`          | A key is missing or blank, or `keys` is not a non-empty list of keys       |
+| `invalid_scenario_flag`         | `in_service` or `closed` is not a real boolean                             |
+| `invalid_scenario_control_mode` | `control_mode` is not `constant_power` or `voltage_control`                |
+| `scenario_key_not_found`        | The grid has no element with a key the scenario names                      |
+
+## Fingerprints
+
+`fingerprint.configuration_hash` identifies the numerical configuration (algorithm and
+options, exactly). `engine_fingerprint` adds the engine version and the solver's name and
+version. The engine version changes whenever a recorded regression hash changes; a test
+ties the two together.
+
 ## Verification
 
 | Test                            | What it establishes                                                                                                                                                                                                                                                         | Tolerance                                                            |

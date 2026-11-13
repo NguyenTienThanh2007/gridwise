@@ -82,6 +82,24 @@ api/routes/grids.py ─▶ services/grids.py ───────────�
 
 Details: [decision 0009](../decisions/0009-grid-api-contract.md).
 
+### Simulation (P1.3a)
+
+```
+SimulationService.submit ── one tenant transaction ──────────────────────────────▶ sim.jobs (queued)
+  share-lock grid ─ rebuild + check hash ─ apply scenario to a copy ─ validate ─ snapshots
+                                                                         ▲
+worker (P1.3b, separate service) claims jobs, solves the input snapshot ─┘
+```
+
+- `sim` schema: scenarios, immutable snapshots (canonical text whose hash the database
+  checks), jobs and their attempts, all tenant-owned with row-level security.
+- The job lifecycle is enforced by a trigger for every role; the API role may only cancel a
+  queued job.
+- Nothing runs queued jobs yet, and no power flow runs in the API process.
+
+Details: [decision 0010](../decisions/0010-simulation-domain-and-job-lifecycle.md) and
+[simulation.md](../domain/simulation.md).
+
 ### API layering
 
 ```

@@ -25,9 +25,20 @@ from gridwise_grid_engine.results import PowerFlowResult
 RESULT_HASH_DECIMALS = 6
 
 
-def _digest(document: Any) -> str:
-    text = json.dumps(document, sort_keys=True, separators=(",", ":"), allow_nan=False)
+GRID_DOCUMENT_SCHEMA = "gridwise.grid/2"
+
+
+def canonical_json(document: Any) -> str:
+    """The one text form of a document: sorted keys, no spaces, no NaN or infinity."""
+    return json.dumps(document, sort_keys=True, separators=(",", ":"), allow_nan=False)
+
+
+def sha256_hex(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _digest(document: Any) -> str:
+    return sha256_hex(canonical_json(document))
 
 
 def _by_id(items: list[dict[str, Any]], key: str) -> list[dict[str, Any]]:
@@ -49,11 +60,19 @@ def _canonical_input(value: Any) -> Any:
     return _canonical_number(value)
 
 
-def grid_hash(grid: GridModel) -> str:
+def canonical_grid_text(grid: GridModel) -> str:
+    """The canonical text of a grid: what ``grid_hash`` hashes, and what a snapshot stores.
+
+    ``sha256(canonical_grid_text(grid)) == grid_hash(grid)`` by construction.
+    """
     document = _canonical_input(asdict(grid))
     for group in ELEMENT_GROUPS:
         document[group] = _by_id(document[group], "id")
-    return _digest({"schema": "gridwise.grid/2", "grid": document})
+    return canonical_json({"schema": GRID_DOCUMENT_SCHEMA, "grid": document})
+
+
+def grid_hash(grid: GridModel) -> str:
+    return sha256_hex(canonical_grid_text(grid))
 
 
 def _normalise(value: Any) -> Any:

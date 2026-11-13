@@ -24,7 +24,8 @@ How the boundary is kept visible:
   stored simulation model. It is not a command, and nothing in GRIDWISE sends it to any
   equipment. The API's documentation says so on that operation.
 - Simulation "actions" (for example opening a switch in a scenario) change simulated state
-  only and are named and labelled as simulation.
+  only and are named and labelled as simulation. A scenario is applied to a copy of the
+  grid stored as an immutable snapshot; the stored grid is not changed (decision 0010).
 
 ## Data provenance
 
