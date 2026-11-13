@@ -10,10 +10,10 @@ distribution networks. Phases and acceptance criteria are in `docs/ROADMAP.md`.
   power flow for Bus / Line / Load / ExternalGrid.
 - **P1.2a (engine: Transformer, Generator, Switch, CIGRE MV benchmark) is merged** (PR 8).
 - **P1.2b (database: `grid` schema, row-level security, `tenancy.tenant_transaction`,
-  `make seed-demo`):** implementation complete; pending review, CI verification and merge.
-  Design: decision 0008.
-- **Next:** P1.2c grid API (decisions D3–D5 in 0007). Do not start a milestone without
-  owner approval.
+  `make seed-demo`) is merged** (PR 9). Design: decision 0008.
+- **P1.2c (grid API under `/api/v1/grids`, ETag/If-Match, engine validation per write):**
+  implementation complete; pending review, CI verification and merge. Design: decision 0009.
+- **Next:** P1.3 simulation, once approved. Do not start a milestone without owner approval.
 
 ## Hard boundaries
 
@@ -26,7 +26,9 @@ distribution networks. Phases and acceptance criteria are in `docs/ROADMAP.md`.
   never zero. Never weaken the engine's consistency checks to make a result pass.
 - Tenant data is reached only through `tenancy.tenant_transaction`. Never set tenant
   context with a session-level `SET`, never from a request value, never weaken a policy.
-- The development tenant and `make seed-demo` exist in `local` and `test` only. Migrations
+- A new API route must be added to the allow-list in `tests/unit/test_system.py`. Platform
+  endpoints stay read-only; grid writes change stored simulation data only.
+- The development tenant, the grid API and `make seed-demo` exist in `local` and `test` only. Migrations
   run as `gridwise_owner`, never as `gridwise_app` and never as a superuser.
 
 ## Architecture (one screen)

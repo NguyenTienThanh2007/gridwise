@@ -86,9 +86,25 @@ Design: [decision 0008](decisions/0008-grid-persistence-and-development-tenant.m
 | 10  | The development tenant needs both an allowed environment and an explicit setting                                         | `test_tenancy.py`                                 |
 | 11  | All earlier checks still pass                                                                                            | CI                                                |
 
-#### P1.2c — API (not started)
+#### P1.2c — Grid API (implementation complete; pending review, CI verification and merge)
 
-Grid, topology and asset endpoints; strict schemas; optimistic concurrency.
+Design: [decision 0009](decisions/0009-grid-api-contract.md).
+
+| #   | Acceptance criterion                                                                                                 | Evidence                                       |
+| --- | -------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| 1   | Create, list, read, rename, describe and delete grids; read and replace topologies; read and change assets           | `test_grid_api.py`                             |
+| 2   | After every kind of write the stored hash equals the hash of the model rebuilt from the rows                         | `test_grid_api.py`                             |
+| 3   | Renaming changes the hash; description and diagram positions do not; every write bumps the version                   | `test_grid_api.py`                             |
+| 4   | An invalid grid is refused on create, replace and asset change, and the database is unchanged row for row            | `test_grid_api_writes.py`                      |
+| 5   | A failure after the old elements are deleted rolls back everything                                                   | `test_grid_api_writes.py`                      |
+| 6   | Missing, malformed and stale `If-Match` give 428, 400 and 412 and change nothing; of two concurrent writers one wins | `test_grid_api_writes.py`                      |
+| 7   | Strict schemas refuse unknown fields, text booleans, NaN, blank names, client ids and `data_origin`                  | `test_grid_api_writes.py`                      |
+| 8   | Another tenant's grid is indistinguishable from a missing one for every route; no response carries tenant or row ids | `test_grid_api_isolation.py`                   |
+| 9   | The grid API does not exist in staging and production; without a development tenant it answers 503 without a query   | `test_grid_api_isolation.py`, `test_system.py` |
+| 10  | Body and element limits are enforced                                                                                 | `test_grid_api_writes.py`                      |
+| 11  | The API exposes exactly the allowed routes; the platform endpoints stay read-only                                    | `test_system.py`                               |
+| 12  | The seeded demonstration grid is readable through the API with the benchmark's hash                                  | `test_grid_api_isolation.py`                   |
+| 13  | All earlier checks still pass                                                                                        | CI                                             |
 
 ### P1.3 — Simulation
 

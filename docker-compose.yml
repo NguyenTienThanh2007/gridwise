@@ -72,6 +72,11 @@ services:
       GRIDWISE_ENVIRONMENT: ${GRIDWISE_ENVIRONMENT:-local}
       GRIDWISE_DATABASE_URL: postgresql+psycopg://gridwise_app:${GRIDWISE_DB_APP_PASSWORD:?set GRIDWISE_DB_APP_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:?set POSTGRES_DB in .env}
       GRIDWISE_CORS_ORIGINS: '["http://localhost:${WEB_PORT:-3100}"]'
+      # The fixed development tenant (decision 0008). The API refuses to start with it
+      # outside local and test. Empty means "not configured": the grid API then answers 503.
+      GRIDWISE_DEV_ORGANIZATION_ID: ${GRIDWISE_DEV_ORGANIZATION_ID:-}
+      # Host names the API answers to; anything else is refused (decision 0009).
+      GRIDWISE_ALLOWED_HOSTS: '${GRIDWISE_ALLOWED_HOSTS:-["localhost","127.0.0.1","::1"]}'
     ports:
       - "127.0.0.1:${API_PORT:-8020}:8000"
     depends_on:

@@ -30,7 +30,9 @@ def failing_app(app: FastAPI) -> FastAPI:
 @pytest.fixture
 async def failing_client(failing_app: FastAPI) -> httpx.AsyncClient:
     # raise_app_exceptions=True (the default) also proves nothing escapes the app.
-    return httpx.AsyncClient(transport=httpx.ASGITransport(app=failing_app), base_url="http://test")
+    return httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=failing_app), base_url="http://localhost"
+    )
 
 
 def _events(output: str) -> list[dict[str, object]]:

@@ -113,7 +113,31 @@ real grid, and it contains no measurements.
 A database created before P1.2b is at revision `0001`: run `make migrate` first. Until then
 the API's readiness check reports `schema_mismatch`.
 
+## Trying the grid API
+
+With the stack up (`make up`), migrated and seeded (`make seed-demo`), and
+`GRIDWISE_DEV_ORGANIZATION_ID` set in `.env`, the API acts for the development organisation:
+
+```bash
+curl -s http://localhost:8020/api/v1/grids
+```
+
+Every write needs the version you read, as `If-Match`:
+
+```bash
+curl -s -X PATCH http://localhost:8020/api/v1/grids/d0000000-0000-4000-8000-000000000002/assets/switches/switch-1 -H 'If-Match: "1"' -H 'Content-Type: application/json' -d '{"closed": true}'
+```
+
+That changes a switch in the stored simulation model only; nothing is sent to any equipment.
+The interactive description is at `http://localhost:8020/docs`. The grid API does not exist
+when `GRIDWISE_ENVIRONMENT` is `staging` or `production` (decision 0009).
+
 ## Gotchas
+
+- The API answers only to the hosts in `GRIDWISE_ALLOWED_HOSTS` (default `localhost`,
+  `127.0.0.1`, `::1`). If you reach it under another name, for example from another
+  machine or with a different `NEXT_PUBLIC_API_URL`, add that name, or every request is
+  refused with `400 invalid_host`.
 
 - `NEXT_PUBLIC_API_URL` is compiled into the browser bundle. Rebuild the web app after
   changing it.

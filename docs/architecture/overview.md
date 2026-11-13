@@ -59,12 +59,28 @@ GridModel ─▶ repositories/grid_mapping ─▶ repositories/grids ─▶ grid
   carries `organization_id` and `grid_id`.
 - `tenant_transaction` is the only code that sets tenant context, and it is scoped to one
   transaction. Repositories accept nothing but the session it yields.
-- No HTTP endpoint reads or writes grids yet (P1.2c). The only writer is the seed command,
-  which creates synthetic demonstration data in local and test environments.
 - There is still no authentication. The development tenant selects a tenant; it protects
   nothing.
 
 Details: [decision 0008](../decisions/0008-grid-persistence-and-development-tenant.md).
+
+### Grid API (P1.2c)
+
+```
+api/routes/grids.py ─▶ services/grids.py ─────────────▶ repositories/grids.py ─▶ grid.*
+ HTTP, ETag/If-Match    lock, version, engine validation,  SQL only
+                        hash, one tenant transaction
+```
+
+- `/api/v1/grids`: grids, their topology and their assets. Registered in local and test only;
+  every request acts for the fixed development tenant.
+- Every write is one transaction: lock the grid, check `If-Match`, validate the resulting model
+  with the engine, write, recompute the hash, bump the version. Anything that fails rolls back.
+- A grid of another tenant is the same `404` as a missing one. No response carries tenant or
+  row ids.
+- No power flow runs in a request; the API imports the engine's validation and hashing only.
+
+Details: [decision 0009](../decisions/0009-grid-api-contract.md).
 
 ### API layering
 

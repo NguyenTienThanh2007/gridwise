@@ -51,7 +51,8 @@ finite numbers. Rules that need more than one row stay in the engine's validatio
 | One voltage reference per bus; at least one in-service external grid | engine      |
 | A switch sits at a terminal of its element; no duplicate switches    | engine      |
 
-P1.2c runs the engine's validation on every write, in the same transaction. Until then the
+The grid API (P1.2c, decision 0009) runs the engine's validation on every write, in the
+same transaction, before anything is written. Before P1.2c the
 only writers are the seed command, which validates, and tests.
 
 **NaN and infinity.** PostgreSQL orders NaN above every number, so `CHECK (x > 0)` accepts
@@ -92,6 +93,10 @@ Configuration refuses the setting in `staging` and `production`, and the resolve
 the environment again.
 
 ### 7. Optimistic concurrency by compare-and-swap (D5)
+
+Since P1.2c the grid service locks the row with `SELECT … FOR UPDATE` and compares the
+version itself, which lets it tell "not found" (404) from "stale" (412); see decision 0009.
+The compare-and-swap below remains in the repository.
 
 `grids.version` starts at 1. A writer calls `claim_version(grid_id, expected)` first, which
 runs `UPDATE … SET version = version + 1 WHERE id = … AND version = :expected`. No row
@@ -139,7 +144,7 @@ Not established:
 
 - **GRIDWISE is still not access-controlled.** Nothing authenticates a caller. The
   development tenant selects a tenant; it does not protect one.
-- No HTTP endpoint uses any of this yet (P1.2c).
+- HTTP access arrived in P1.2c (decision 0009), still for the development tenant only.
 - The owner role is not filtered by row-level security (`FORCE ROW LEVEL SECURITY` is not
   set). The seed command runs as the owner and therefore relies on its explicit filters.
 - Row-level security on TimescaleDB hypertables (P2) is still untested, as noted in 0004.
