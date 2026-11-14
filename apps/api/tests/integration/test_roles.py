@@ -122,6 +122,7 @@ def test_runtime_role_has_exactly_the_granted_privileges(admin_engine: Engine) -
             "sim.job_transitions:SELECT",
             "sim.jobs:INSERT",
             "sim.jobs:SELECT",
+            "sim.reproductions:SELECT",
             "sim.results:SELECT",
             "sim.scenarios:DELETE",
             "sim.scenarios:INSERT",
@@ -257,7 +258,10 @@ def test_the_worker_role_has_only_its_functions(admin_engine: Engine) -> None:
             "sim.complete_job",
             "sim.fail_job",
             "sim.heartbeat_job",
+            "sim.record_reproduction",
             "sim.release_job",
+            "sim.reproduction_candidates",
+            "sim.reproduction_input",
         ]
         schemas = connection.execute(
             text(

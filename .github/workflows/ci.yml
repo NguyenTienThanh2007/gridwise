@@ -132,6 +132,8 @@ jobs:
         run: |
           job=$(uv run python scripts/worker_smoke.py submit | tail -1)
           uv run python scripts/worker_smoke.py wait "$job" 180
+      - name: The solved job reproduces from its stored input
+        run: uv run python -m gridwise_worker.reproduce --pending
       - name: The worker stops cleanly on SIGTERM
         run: |
           docker compose --profile worker stop -t 30 worker

@@ -12,6 +12,8 @@ from sqlalchemy.exc import ProgrammingError
 
 from gridwise_worker.settings import WorkerSettings
 
+STATEMENT_TIMEOUT_MS = 30_000
+
 _SET_TENANT = text("SELECT set_config('app.current_organization_id', :organization_id, true)")
 _UNDEFINED_TABLE = "42P01"
 _NO_PRIVILEGE = "42501"
@@ -26,6 +28,20 @@ class Lease:
     input_document: str
     input_hash: str
     configuration: str
+    #: The engine version the job was submitted with (to warn when it differs).
+    requested_engine_version: str | None = None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ReproductionInput:
+    job_id: UUID
+    organization_id: UUID
+    status: str
+    outcome: str | None
+    input_document: str
+    input_hash: str
+    configuration: str
+    stored_result_hash: str | None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -46,6 +62,8 @@ def connect(settings: WorkerSettings) -> Engine:
         max_overflow=0,
         pool_pre_ping=True,
         hide_parameters=True,
+        # No call may hang the loop (and with it the heartbeat) indefinitely.
+        connect_args={"options": f"-c statement_timeout={STATEMENT_TIMEOUT_MS}"},
     )
 
 
@@ -84,6 +102,7 @@ class WorkerDatabase:
             input_document=row.input_document,
             input_hash=row.input_hash,
             configuration=row.configuration,
+            requested_engine_version=getattr(row, "requested_engine_version", None),
         )
 
     def _held(self, lease: Lease, statement: str, values: dict[str, object]) -> bool:
@@ -126,3 +145,66 @@ class WorkerDatabase:
 
     def release(self, lease: Lease) -> bool:
         return self._held(lease, "SELECT sim.release_job(:job_id, :token)", {})
+
+    # --- reproduction (migration 0005) ---
+
+    def reproduction_candidates(self, limit: int) -> list[tuple[UUID, UUID]]:
+        """(job id, organisation id) of completed jobs never reproduced, oldest first."""
+        with self._engine.begin() as connection:
+            rows = connection.execute(
+                text("SELECT job_id, organization_id FROM sim.reproduction_candidates(:limit)"),
+                {"limit": limit},
+            ).all()
+        return [(row.job_id, row.organization_id) for row in rows]
+
+    def reproduction_input(self, organization_id: UUID, job_id: UUID) -> ReproductionInput | None:
+        with self._engine.begin() as connection:
+            connection.execute(_SET_TENANT, {"organization_id": str(organization_id)})
+            row = connection.execute(
+                text("SELECT * FROM sim.reproduction_input(:job_id)"), {"job_id": job_id}
+            ).one_or_none()
+        if row is None:
+            return None
+        return ReproductionInput(
+            job_id=row.job_id,
+            organization_id=organization_id,
+            status=row.status,
+            outcome=row.outcome,
+            input_document=row.input_document,
+            input_hash=row.input_hash,
+            configuration=row.configuration,
+            stored_result_hash=row.stored_result_hash,
+        )
+
+    def record_reproduction(
+        self,
+        organization_id: UUID,
+        job_id: UUID,
+        *,
+        outcome: str | None,
+        result_hash: str | None,
+        engine_version: str | None,
+        solver_name: str | None,
+        solver_version: str | None,
+        problem: str | None,
+    ) -> str | None:
+        """Record what the reproduction found. The database decides and returns the verdict."""
+        with self._engine.begin() as connection:
+            connection.execute(_SET_TENANT, {"organization_id": str(organization_id)})
+            verdict = connection.execute(
+                text(
+                    "SELECT sim.record_reproduction(:job_id, :outcome, :result_hash, "
+                    ":engine_version, :solver_name, :solver_version, :worker_id, :problem)"
+                ),
+                {
+                    "job_id": job_id,
+                    "outcome": outcome,
+                    "result_hash": result_hash,
+                    "engine_version": engine_version,
+                    "solver_name": solver_name,
+                    "solver_version": solver_version,
+                    "worker_id": self._worker_id,
+                    "problem": problem,
+                },
+            ).scalar_one()
+        return verdict  # type: ignore[no-any-return]

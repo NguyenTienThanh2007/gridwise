@@ -50,6 +50,10 @@ def solve(request: SolveRequest, solver: Any) -> dict[str, Any]:
         return {"ok": False, "failure_code": "snapshot_corrupt"}
     try:
         options = _options(request.configuration)
+    except (ValueError, KeyError, TypeError):
+        # The stored configuration is not one this engine accepts: the input is at fault.
+        return {"ok": False, "failure_code": "invalid_input"}
+    try:
         result = run_power_flow(grid, solver, options)
     except GridValidationError:
         return {"ok": False, "failure_code": "invalid_input"}

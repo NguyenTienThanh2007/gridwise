@@ -63,9 +63,26 @@ text is never stored or shown.
 
 ## Reproducing a result
 
-Take the job's input snapshot, verify its hash, and run `run_power_flow` with the job's
-configuration. The `result_hash` must equal the stored one (P1.3c). Scenario code is not
-involved: the input snapshot already is the scenario's result.
+`make reproduce` (`python -m gridwise_worker.reproduce --pending`) takes each completed job
+not yet reproduced, verifies its input snapshot's hash, runs `run_power_flow` with the job's
+configuration in the worker's solver process, and records the verdict the database derives
+from the stored result (`match`, `mismatch`, `differs_after_engine_change`, `result_missing`,
+`not_reproducible`, `snapshot_corrupt`, `reproduction_failed`). Scenario code is not
+involved: the input snapshot already is the scenario's result. Design: decision 0012.
+
+## Summaries
+
+`ResultService.get` returns a converged job's stored result document, checked against its
+hash, and its summary: totals, voltage extremes, highest line and transformer loading with
+their keys, counts of elements above 100 % of their rating and of de-energised elements.
+A job that did not converge has a summary with no values.
+
+## Retention
+
+Nothing is deleted automatically. `python -m gridwise_api.retention --finished-before
+<time>` reports what would go; with `--apply` it deletes finished jobs older than that,
+their results, attempts and reproductions, and the snapshots no other job uses. Grids and
+scenarios are never touched.
 
 ## The worker
 
@@ -79,6 +96,5 @@ none.
 
 ## Limits
 
-- Snapshots are kept indefinitely; there is no retention rule yet.
 - There is no per-tenant queue fairness yet.
 - Cancelling a running job is not supported.

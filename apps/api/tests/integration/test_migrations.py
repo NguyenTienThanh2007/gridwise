@@ -128,8 +128,8 @@ def test_a_downgrade_with_data_removes_the_data_and_upgrades_cleanly(
 def test_the_api_expects_the_head_revision(alembic_config: Config) -> None:
     from gridwise_api.schema_version import EXPECTED_SCHEMA_REVISION
 
-    assert ScriptDirectory.from_config(alembic_config).get_current_head() == "0004"
-    assert EXPECTED_SCHEMA_REVISION == "0004"
+    assert ScriptDirectory.from_config(alembic_config).get_current_head() == "0005"
+    assert EXPECTED_SCHEMA_REVISION == "0005"
 
 
 def test_migrations_cannot_be_run_by_the_runtime_role(
