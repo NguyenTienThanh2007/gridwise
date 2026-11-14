@@ -10,6 +10,8 @@ from gridwise_api.repositories.system import SqlSystemRepository
 from gridwise_api.schema_version import EXPECTED_SCHEMA_REVISION
 from gridwise_api.services.grids import GridService
 from gridwise_api.services.health import HealthService
+from gridwise_api.services.results import ResultService
+from gridwise_api.services.simulations import SimulationService
 from gridwise_api.tenancy import DevelopmentTenantUnavailableError, resolve_development_tenant
 
 
@@ -50,3 +52,13 @@ def get_grid_service(
     request: Request, settings: Annotated[Settings, Depends(get_app_settings)]
 ) -> GridService:
     return GridService(request.app.state.engine, max_elements=settings.grid_max_elements)
+
+
+def get_simulation_service(
+    request: Request, settings: Annotated[Settings, Depends(get_app_settings)]
+) -> SimulationService:
+    return SimulationService(request.app.state.engine, max_elements=settings.grid_max_elements)
+
+
+def get_result_service(request: Request) -> ResultService:
+    return ResultService(request.app.state.engine)

@@ -160,7 +160,7 @@ CI run 43426182696 on the merge commit (`91440b9`) passed all six jobs: engine 4
 166 and integration 576, worker processes 13, the Compose smoke test (job completed and
 converged with one result row; worker exit code 0 on SIGTERM), web 39 and end-to-end 7.
 
-#### P1.3c — Reproduction, result summaries, retention (implementation complete; pending review, CI verification and merge)
+#### P1.3c — Reproduction, result summaries, retention (merged)
 
 Design: [decision 0012](decisions/0012-reproduction-summaries-and-retention.md).
 
@@ -178,7 +178,28 @@ Design: [decision 0012](decisions/0012-reproduction-summaries-and-retention.md).
 | 10  | Worker: bad configuration is `invalid_input`; a solver that cannot start stops the worker safely; engine version drift is logged; statement timeout 30 s | `test_worker_fixes.py`, `test_reproduction.py`        |
 | 11  | All earlier checks still pass                                                                                                                            | CI                                                    |
 
-#### P1.3d — Simulation API (not started)
+PR 13 merged as `2c088ef`. CI run 43603454270 on the merge commit passed all six jobs:
+engine 492, API unit 173 and integration 603, worker processes 13, end-to-end 7, and the
+Compose reproduction reported `"verdict": "match"` with worker exit code 0 on SIGTERM.
+
+#### P1.3d — Simulation API (implementation complete; pending review, CI verification and merge)
+
+Design: [decision 0013](decisions/0013-simulation-api-contract.md). No migration.
+
+| #   | Acceptance criterion                                                                                                                         | Evidence                                     |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| 1   | Scenarios are created, read, listed and deleted; invalid ones report the engine's codes and store nothing                                    | `test_simulation_api.py`                     |
+| 2   | Submission returns `202` with a queued job matching the grid; refusals (412, 400, 404, 422) store nothing                                    | `test_simulation_api.py`                     |
+| 3   | An `Idempotency-Key` replays the first job (`200`, `Idempotent-Replayed`), refuses a different request, and makes one job under concurrency  | `test_simulation_api.py`                     |
+| 4   | Jobs are listed newest first with grid, status and date filters; the source status follows the grid                                          | `test_simulation_api.py`                     |
+| 5   | Only queued jobs can be cancelled; a cancel racing a claim has one winner                                                                    | `test_simulation_api.py`                     |
+| 6   | Results: converged gives summary and document; not converged no values; others `409`; damaged data `500` with no values                      | `test_simulation_api.py`                     |
+| 7   | Reproduction history is read-only and newest first; reading it reproduces nothing                                                            | `test_simulation_api.py`                     |
+| 8   | No response holds organisation, lease, worker, fingerprint or key fields                                                                     | `test_simulation_api.py` (unit, integration) |
+| 9   | Another tenant's ids give the same `404` as random ids and change nothing; no tenant gives `503`; staging and production have no such routes | `test_simulation_api.py`, `test_system.py`   |
+| 10  | The API process never loads the solver                                                                                                       | `test_simulation_api.py`                     |
+| 11  | Over HTTP, the deployed API queues a job, the deployed worker solves it, and its reproduction is a `match`                                   | CI job "Worker"                              |
+| 12  | All earlier checks still pass                                                                                                                | CI                                           |
 
 ### P1.4 — Web
 

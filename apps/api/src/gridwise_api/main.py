@@ -19,7 +19,8 @@ from gridwise_api.api.errors import (
 from gridwise_api.api.hosts import TrustedHostMiddleware
 from gridwise_api.api.limits import BodySizeLimitMiddleware
 from gridwise_api.api.middleware import REQUEST_ID_HEADER, RequestContextMiddleware
-from gridwise_api.api.routes import grids, health, system
+from gridwise_api.api.routes import grids, health, scenarios, simulations, system
+from gridwise_api.api.routes.simulations import REPLAYED_HEADER
 from gridwise_api.config import DEVELOPMENT_ENVIRONMENTS, Settings, get_settings
 from gridwise_api.db import create_engine
 from gridwise_api.logging import configure_logging, get_logger
@@ -61,16 +62,19 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             CORSMiddleware,
             allow_origins=settings.cors_origins,
             allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
-            allow_headers=[REQUEST_ID_HEADER, "Content-Type", "If-Match"],
-            expose_headers=[REQUEST_ID_HEADER, "ETag", "Location"],
+            allow_headers=[REQUEST_ID_HEADER, "Content-Type", "If-Match", "Idempotency-Key"],
+            expose_headers=[REQUEST_ID_HEADER, "ETag", "Location", REPLAYED_HEADER],
         )
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.allowed_hosts)
     app.add_middleware(RequestContextMiddleware)
 
     app.include_router(health.router)
     app.include_router(system.router)
-    # The grid API acts for the fixed development tenant, which exists only in local and
-    # test. Elsewhere the routes are not registered at all (decision 0009).
+    # The grid, scenario and simulation APIs act for the fixed development tenant, which
+    # exists only in local and test. Elsewhere the routes are not registered at all
+    # (decisions 0009 and 0013).
     if settings.environment in DEVELOPMENT_ENVIRONMENTS:
         app.include_router(grids.router)
+        app.include_router(scenarios.router)
+        app.include_router(simulations.router)
     return app

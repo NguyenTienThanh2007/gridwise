@@ -29,14 +29,16 @@ stored grid, captured as immutable snapshots, with a lifecycle the database enfo
 **P1.3b (simulation worker) is merged** (PR 12): a separate worker (`make up-worker`) solves
 queued jobs in a child process it can kill, and stores each result with the job's completion.
 
-**P1.3c (reproduction, result summaries, retention): implementation complete; pending
-review, CI verification and merge.** `make reproduce` re-solves finished jobs and records
-whether their stored results hold.
+**P1.3c (reproduction, result summaries, retention) is merged** (PR 13): `make reproduce`
+re-solves finished jobs and records whether their stored results hold.
 
-No power flow runs in the API process, there is no simulation HTTP API yet (P1.3d), and the
-web app is unchanged. There is no
-authentication: the grid API exists only in local and test environments and acts for one
-fixed development tenant. See [docs/ROADMAP.md](docs/ROADMAP.md).
+**P1.3d (simulation API): implementation complete; pending review, CI verification and
+merge.** `/api/v1/scenarios` and `/api/v1/simulations` create scenarios, submit and follow
+simulations, and read results and reproduction history over HTTP.
+
+No power flow runs in the API process: a submission is queued and the worker solves it. The
+web app is unchanged. There is no authentication: the grid, scenario and simulation APIs
+exist only in local and test environments and act for one fixed development tenant. See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 What works today:
 

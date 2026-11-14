@@ -12,6 +12,7 @@ from uuid import UUID
 
 from sqlalchemy import Table, delete, func, insert, select, text, update
 
+from gridwise_api.models import grid as grid_tables
 from gridwise_api.models import simulation as tables
 from gridwise_api.tenancy import TenantSession
 
@@ -19,6 +20,8 @@ _SCENARIOS: Table = tables.Scenario.__table__  # type: ignore[assignment]
 _SNAPSHOTS: Table = tables.Snapshot.__table__  # type: ignore[assignment]
 _JOBS: Table = tables.Job.__table__  # type: ignore[assignment]
 _ATTEMPTS: Table = tables.JobAttempt.__table__  # type: ignore[assignment]
+_REPRODUCTIONS: Table = tables.Reproduction.__table__  # type: ignore[assignment]
+_GRIDS: Table = grid_tables.Grid.__table__  # type: ignore[assignment]
 
 
 class SnapshotContentMismatchError(Exception):
@@ -87,6 +90,20 @@ class AttemptRecord:
     started_at: datetime
     ended_at: datetime | None
     ended_by: str | None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ReproductionRecord:
+    """One reproduction of a job. ``worker_id`` is not read: it is infrastructure detail."""
+
+    id: UUID
+    verdict: str
+    reproduced_outcome: str | None
+    reproduced_result_hash: str | None
+    engine_version: str | None
+    solver_name: str | None
+    solver_version: str | None
+    created_at: datetime
 
 
 def _fields(record_type: type, row: Any) -> Any:
@@ -251,12 +268,19 @@ async def list_jobs(
     offset: int,
     grid_id: UUID | None = None,
     status: str | None = None,
+    submitted_after: datetime | None = None,
+    submitted_before: datetime | None = None,
 ) -> tuple[list[JobRecord], int]:
+    """Newest first. ``submitted_after`` is inclusive, ``submitted_before`` exclusive."""
     conditions = [_JOBS.c.organization_id == session.organization_id]
     if grid_id is not None:
         conditions.append(_JOBS.c.source_grid_id == grid_id)
     if status is not None:
         conditions.append(_JOBS.c.status == status)
+    if submitted_after is not None:
+        conditions.append(_JOBS.c.created_at >= submitted_after)
+    if submitted_before is not None:
+        conditions.append(_JOBS.c.created_at < submitted_before)
     total = (
         await session.execute(select(func.count()).select_from(_JOBS).where(*conditions))
     ).scalar_one()
@@ -297,3 +321,56 @@ async def list_attempts(session: TenantSession, job_id: UUID) -> list[AttemptRec
         .order_by(_ATTEMPTS.c.attempt)
     )
     return [_fields(AttemptRecord, row) for row in rows]
+
+
+async def snapshot_hashes(session: TenantSession, snapshot_ids: set[UUID]) -> dict[UUID, str]:
+    if not snapshot_ids:
+        return {}
+    rows = await session.execute(
+        select(_SNAPSHOTS.c.id, _SNAPSHOTS.c.content_hash).where(
+            _SNAPSHOTS.c.organization_id == session.organization_id,
+            _SNAPSHOTS.c.id.in_(snapshot_ids),
+        )
+    )
+    return {row.id: row.content_hash for row in rows}
+
+
+# --- source grids -------------------------------------------------------------------------
+
+
+async def grid_versions(session: TenantSession, grid_ids: set[UUID]) -> dict[UUID, int]:
+    """The current version of each of these grids that still exists."""
+    if not grid_ids:
+        return {}
+    rows = await session.execute(
+        select(_GRIDS.c.id, _GRIDS.c.version).where(
+            _GRIDS.c.organization_id == session.organization_id,
+            _GRIDS.c.id.in_(grid_ids),
+        )
+    )
+    return {row.id: row.version for row in rows}
+
+
+# --- reproductions ------------------------------------------------------------------------
+
+
+async def list_reproductions(
+    session: TenantSession, job_id: UUID, *, limit: int, offset: int
+) -> tuple[list[ReproductionRecord], int]:
+    """Newest first. Read-only: reproductions are recorded by the worker role only."""
+    conditions = (
+        _REPRODUCTIONS.c.organization_id == session.organization_id,
+        _REPRODUCTIONS.c.job_id == job_id,
+    )
+    total = (
+        await session.execute(select(func.count()).select_from(_REPRODUCTIONS).where(*conditions))
+    ).scalar_one()
+    columns = [_REPRODUCTIONS.c[field.name] for field in fields(ReproductionRecord)]
+    rows = await session.execute(
+        select(*columns)
+        .where(*conditions)
+        .order_by(_REPRODUCTIONS.c.created_at.desc(), _REPRODUCTIONS.c.id.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+    return [_fields(ReproductionRecord, row) for row in rows], int(total)

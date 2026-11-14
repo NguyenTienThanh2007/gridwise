@@ -94,6 +94,12 @@ A converged job has one row in `sim.results`: the engine's full result as canoni
 written in the same transaction as the job's completion. A job that did not converge has
 none.
 
+## Over HTTP
+
+`/api/v1/scenarios` and `/api/v1/simulations` (local and test only) expose all of this:
+submit (`202`, then poll the job), list, read, cancel a queued job, read the result and the
+reproduction history. Contract, idempotency and error codes: decision 0013.
+
 ## Limits
 
 - There is no per-tenant queue fairness yet.
