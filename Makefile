@@ -13,7 +13,7 @@ env_value = $(shell sed -n 's/^$(1)=//p' .env 2>/dev/null | tail -n 1)
 API_PORT ?= $(or $(call env_value,API_PORT),8020)
 WEB_PORT ?= $(or $(call env_value,WEB_PORT),3100)
 
-.PHONY: help setup up up-web down reset-db migrate seed-demo db-worker-role up-worker worker dev-api dev-web fmt lint typecheck \
+.PHONY: help setup up up-web down reset-db migrate seed-demo db-worker-role up-worker worker reproduce retention-dry-run dev-api dev-web fmt lint typecheck \
         test test-engine test-integration test-e2e audit check
 
 help: ## List the available commands
@@ -35,6 +35,12 @@ up-worker: ## Same as `up`, plus the simulation worker
 
 worker: ## Run the simulation worker on the host (needs a migrated database)
 	PYTHONPATH=apps/worker/src:apps/api/src:packages/grid-engine/src uv run python -m gridwise_worker
+
+reproduce: ## Reproduce completed simulations not yet reproduced; non-zero on an integrity problem
+	PYTHONPATH=apps/worker/src:apps/api/src:packages/grid-engine/src uv run python -m gridwise_worker.reproduce --pending
+
+retention-dry-run: ## Report simulations finished before BEFORE (ISO time with zone); deletes nothing
+	PYTHONPATH=apps/api/src:packages/grid-engine/src uv run python -m gridwise_api.retention --finished-before "$(BEFORE)"
 
 db-worker-role: ## Create the worker role in an existing database volume (idempotent)
 	./scripts/create-worker-role.sh

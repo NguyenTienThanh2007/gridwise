@@ -26,7 +26,7 @@ from gridwise_api.schema_version import EXPECTED_SCHEMA_REVISION
 from gridwise_worker.child import SolveRequest
 from gridwise_worker.database import Completion, Lease, WorkerDatabase
 from gridwise_worker.settings import WorkerSettings
-from gridwise_worker.supervisor import ChildSupervisor, RunKind
+from gridwise_worker.supervisor import ChildStartError, ChildSupervisor, RunKind
 
 logger = get_logger("gridwise_worker")
 
@@ -36,6 +36,7 @@ T = TypeVar("T")
 #: Exit codes of ``run``.
 EXIT_OK = 0
 EXIT_SCHEMA_MISMATCH = 2
+EXIT_SOLVER_UNAVAILABLE = 3
 
 
 class Worker:
@@ -50,6 +51,7 @@ class Worker:
         self._supervisor = supervisor
         self._stop = threading.Event()
         self._stop_requested_at: float | None = None
+        self._solver_unavailable = False
         self._health = Path(settings.worker_health_file)
 
     # --- control ---
@@ -111,7 +113,12 @@ class Worker:
                 "schema_mismatch", schema_revision=revision, expected=EXPECTED_SCHEMA_REVISION
             )
             return EXIT_SCHEMA_MISMATCH
-        self._supervisor.start()
+        try:
+            self._supervisor.start()
+        except ChildStartError:
+            # Nothing was claimed: the process exits and its supervisor (Compose) restarts it.
+            logger.error("solver_process_unavailable", worker_id=self._settings.worker_id)
+            return EXIT_SOLVER_UNAVAILABLE
         logger.info("worker_started", worker_id=self._settings.worker_id)
         try:
             while not self.stopping:
@@ -124,7 +131,7 @@ class Worker:
         finally:
             self._supervisor.stop()
             logger.info("worker_stopped", worker_id=self._settings.worker_id)
-        return EXIT_OK
+        return EXIT_SOLVER_UNAVAILABLE if self._solver_unavailable else EXIT_OK
 
     def _process(self, lease: Lease) -> None:
         log = logger.bind(
@@ -143,18 +150,27 @@ class Worker:
                 log.warning("heartbeat_failed")
                 return True
 
-        run = self._supervisor.run(
-            SolveRequest(
-                job_id=str(lease.job_id),
-                input_document=lease.input_document,
-                input_hash=lease.input_hash,
-                configuration=lease.configuration,
-            ),
-            timeout_seconds=self._settings.worker_job_timeout_seconds,
-            tick_seconds=self._settings.worker_heartbeat_seconds,
-            on_tick=heartbeat,
-            should_abort=self._grace_over,
-        )
+        try:
+            run = self._supervisor.run(
+                SolveRequest(
+                    job_id=str(lease.job_id),
+                    input_document=lease.input_document,
+                    input_hash=lease.input_hash,
+                    configuration=lease.configuration,
+                ),
+                timeout_seconds=self._settings.worker_job_timeout_seconds,
+                tick_seconds=self._settings.worker_heartbeat_seconds,
+                on_tick=heartbeat,
+                should_abort=self._grace_over,
+            )
+        except ChildStartError:
+            # No solver process can be started: give the job back and stop this worker.
+            until = time.monotonic() + self._settings.worker_lease_seconds
+            released = self._wait_for_database(lambda: self._db.release(lease), until=until)
+            log.error("solver_process_unavailable", released=bool(released))
+            self._solver_unavailable = True
+            self.request_stop()
+            return
         # A write is worth retrying only while our lease can still be valid.
         until = time.monotonic() + self._settings.worker_lease_seconds
 
@@ -173,6 +189,16 @@ class Worker:
             )
             event = "job_completed" if written else "job_result_discarded"
             log.info(event, outcome=completion.outcome)
+            if (
+                lease.requested_engine_version is not None
+                and lease.requested_engine_version != completion.engine_version
+            ):
+                # Recorded on the job either way; said here so an operator notices.
+                log.warning(
+                    "engine_version_differs",
+                    requested_engine_version=lease.requested_engine_version,
+                    executed_engine_version=completion.engine_version,
+                )
         elif run.kind is RunKind.RESULT:
             code = str((run.message or {}).get("failure_code", "solver_failed"))
             written = self._wait_for_database(lambda: self._db.fail(lease, code), until=until)

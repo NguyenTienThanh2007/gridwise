@@ -26,9 +26,12 @@ their topology and their assets, with engine validation and optimistic concurren
 **P1.3a (simulation domain) is merged** (PR 11): simulations can be submitted against a
 stored grid, captured as immutable snapshots, with a lifecycle the database enforces.
 
-**P1.3b (simulation worker): implementation complete; pending review, CI verification and
-merge.** A separate worker (`make up-worker`) solves queued jobs in a child process it can
-kill, and stores each result with the job's completion.
+**P1.3b (simulation worker) is merged** (PR 12): a separate worker (`make up-worker`) solves
+queued jobs in a child process it can kill, and stores each result with the job's completion.
+
+**P1.3c (reproduction, result summaries, retention): implementation complete; pending
+review, CI verification and merge.** `make reproduce` re-solves finished jobs and records
+whether their stored results hold.
 
 No power flow runs in the API process, there is no simulation HTTP API yet (P1.3d), and the
 web app is unchanged. There is no

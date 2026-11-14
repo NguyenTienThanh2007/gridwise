@@ -56,3 +56,13 @@ class Slow(_Base):
     def solve(self, grid: GridModel, options: PowerFlowOptions) -> RawSolution:
         time.sleep(float(os.environ.get("GRIDWISE_TEST_SOLVE_SECONDS", "3")))
         return self._real.solve(grid, options)
+
+
+class FailsToStart(_Base):
+    """The solver cannot even be built: the child process dies before it is ready."""
+
+    def __init__(self) -> None:
+        raise RuntimeError("cannot start")
+
+    def solve(self, grid: GridModel, options: PowerFlowOptions) -> RawSolution:  # pragma: no cover
+        raise AssertionError

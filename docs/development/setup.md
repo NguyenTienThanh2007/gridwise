@@ -77,7 +77,7 @@ from before the roles existed, or you change a password in `.env`, run `make res
    `models/__init__.py`.
 2. If it lives in a new schema, add the schema to `MANAGED_SCHEMAS` in `models/base.py`.
 3. From `apps/api`:
-   `uv run alembic revision --autogenerate --rev-id 0005 -m "describe the change"`
+   `uv run alembic revision --autogenerate --rev-id 0006 -m "describe the change"`
    (revision IDs are sequential four-digit numbers; use the next one after the current head).
 4. Review the generated file by hand and write a real `downgrade`. Then add what
    autogenerate cannot see (decision 0006):
@@ -110,7 +110,7 @@ real grid, and it contains no measurements.
   that setting only in `local` and `test`. It selects a tenant; it is not a credential and
   protects nothing ([decision 0008](../decisions/0008-grid-persistence-and-development-tenant.md)).
 
-After pulling new migrations, run `make migrate` (the head is `0004`). Until then the API's
+After pulling new migrations, run `make migrate` (the head is `0005`). Until then the API's
 readiness check reports `schema_mismatch`, and the worker refuses to start.
 
 ## The simulation worker
@@ -128,6 +128,16 @@ run `make db-worker-role` once (it changes nothing if the role exists), then `ma
 
 `docker compose --profile worker stop worker` sends SIGTERM: the worker stops claiming,
 lets the current job finish for up to 20 seconds, and otherwise hands it back to the queue.
+The container turns unhealthy while the database is unreachable for more than 30 seconds:
+the worker is not working then, and that is what the health check reports.
+
+| Command                                              | Does                                                                                                      |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `make reproduce`                                     | Re-solve completed jobs not yet reproduced and record the verdicts; non-zero exit on an integrity problem |
+| `make retention-dry-run BEFORE=2026-01-01T00:00:00Z` | Report what retention would delete; deletes nothing                                                       |
+
+Retention deletes only with `--apply`:
+`PYTHONPATH=apps/api/src:packages/grid-engine/src uv run python -m gridwise_api.retention --finished-before 2026-01-01T00:00:00Z --apply`
 
 ## Trying the grid API
 

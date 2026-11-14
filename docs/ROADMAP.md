@@ -135,7 +135,7 @@ and [docs/domain/simulation.md](domain/simulation.md).
 CI run 43419018212 on the merge commit passed all five jobs: engine 422, API unit 166 and
 integration 534 tests.
 
-#### P1.3b — Worker (implementation complete; pending review, CI verification and merge)
+#### P1.3b — Worker (merged, pull request 12)
 
 Design: [decision 0011](decisions/0011-simulation-worker.md).
 
@@ -156,7 +156,27 @@ Design: [decision 0011](decisions/0011-simulation-worker.md).
 | 13  | The deployed worker solves a submitted job and stops cleanly on SIGTERM                                                              | CI job "Worker"                                     |
 | 14  | All earlier checks still pass                                                                                                        | CI                                                  |
 
-#### P1.3c — Reproducibility checks, result summaries, retention (not started)
+CI run 43426182696 on the merge commit (`91440b9`) passed all six jobs: engine 476, API unit
+166 and integration 576, worker processes 13, the Compose smoke test (job completed and
+converged with one result row; worker exit code 0 on SIGTERM), web 39 and end-to-end 7.
+
+#### P1.3c — Reproduction, result summaries, retention (implementation complete; pending review, CI verification and merge)
+
+Design: [decision 0012](decisions/0012-reproduction-summaries-and-retention.md).
+
+| #   | Acceptance criterion                                                                                                                                     | Evidence                                              |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| 1   | A correct stored result reproduces as `match`, also after a solver version change                                                                        | `test_reproduction.py`                                |
+| 2   | A stored result the software does not compute is `mismatch`; with another solver version `differs_after_engine_change`                                   | `test_reproduction.py`                                |
+| 3   | Non-convergence reproduces as non-convergence, with no result                                                                                            | `test_reproduction.py`                                |
+| 4   | A damaged input is `snapshot_corrupt`; a missing result `result_missing`; failed or cancelled jobs `not_reproducible`; none is solved                    | `test_reproduction.py`                                |
+| 5   | The database decides the verdict; reproduction is tenant-scoped; reproductions are append-only                                                           | `test_reproduction.py`                                |
+| 6   | The command exits non-zero on an integrity problem                                                                                                       | `test_reproduction.py`, CI                            |
+| 7   | Summaries report totals, extremes and counts without invented limits; no values when not converged                                                       | `test_result_summaries.py`, `test_results_service.py` |
+| 8   | Results are read through the API role, hash-checked, tenant-scoped                                                                                       | `test_results_service.py`                             |
+| 9   | Retention: dry run changes nothing; only finished jobs before the cutoff go; shared snapshots, grids and scenarios stay; a failure rolls that job back   | `test_retention.py`                                   |
+| 10  | Worker: bad configuration is `invalid_input`; a solver that cannot start stops the worker safely; engine version drift is logged; statement timeout 30 s | `test_worker_fixes.py`, `test_reproduction.py`        |
+| 11  | All earlier checks still pass                                                                                                                            | CI                                                    |
 
 #### P1.3d — Simulation API (not started)
 

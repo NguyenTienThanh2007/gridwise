@@ -249,3 +249,35 @@ class Result(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=text("now()")
     )
+
+
+class Reproduction(Base):
+    """One reproduction of a finished job. Append-only; the verdict is decided by the
+    database (sim.record_reproduction, migration 0005)."""
+
+    __tablename__ = "reproductions"
+    __table_args__ = (
+        PrimaryKeyConstraint("id", name="pk_reproductions"),
+        ForeignKeyConstraint(
+            ["organization_id", "job_id"],
+            ["sim.jobs.organization_id", "sim.jobs.id"],
+            name="fk_reproductions_job",
+            ondelete="CASCADE",
+        ),
+        Index("ix_reproductions_organization_job", "organization_id", "job_id", "created_at"),
+        {"schema": SCHEMA},
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, server_default=text("uuidv7()"))
+    organization_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+    job_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+    verdict: Mapped[str] = mapped_column(Text)
+    reproduced_outcome: Mapped[str | None] = mapped_column(Text)
+    reproduced_result_hash: Mapped[str | None] = mapped_column(Text)
+    engine_version: Mapped[str | None] = mapped_column(Text)
+    solver_name: Mapped[str | None] = mapped_column(Text)
+    solver_version: Mapped[str | None] = mapped_column(Text)
+    worker_id: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=text("now()")
+    )

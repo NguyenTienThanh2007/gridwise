@@ -97,3 +97,45 @@ def requeue(connection: Connection, job_id: uuid.UUID) -> None:
         ),
         {"id": job_id},
     )
+
+
+def finish_with_real_result(
+    worker_engine: Engine,
+    *,
+    result_hash_override: str | None = None,
+    solver_version_override: str | None = None,
+) -> uuid.UUID:
+    """Claim the oldest job as a worker would and complete it with a real result, computed
+    here from the stored input. Overrides simulate a stored result that is not what the
+    software computes, or that came from another solver version."""
+    from gridwise_grid_engine import __version__, result_hash, run_power_flow
+    from gridwise_grid_engine.adapters.pandapower_adapter import PandapowerSolver
+    from gridwise_grid_engine.fingerprint import engine_fingerprint
+    from gridwise_grid_engine.result_documents import result_document_text
+    from gridwise_grid_engine.snapshots import grid_from_snapshot
+    from gridwise_worker.child import _options
+    from gridwise_worker.database import Completion, WorkerDatabase
+
+    database = WorkerDatabase(worker_engine, worker_id="test-finisher", lease_seconds=60)
+    lease = database.claim()
+    assert lease is not None
+    solver = PandapowerSolver()
+    options = _options(lease.configuration)
+    result = run_power_flow(grid_from_snapshot(lease.input_document), solver, options)
+    version = solver_version_override or solver.version
+    completion = Completion(
+        outcome="converged" if result.converged else "not_converged",
+        engine_version=__version__,
+        solver_name=solver.name,
+        solver_version=version,
+        engine_fingerprint=engine_fingerprint(
+            engine_version=__version__,
+            solver_name=solver.name,
+            solver_version=version,
+            options=options,
+        ),
+        result_document=result_document_text(result) if result.converged else None,
+        result_hash=(result_hash_override or result_hash(result)) if result.converged else None,
+    )
+    assert database.complete(lease, completion)
+    return lease.job_id

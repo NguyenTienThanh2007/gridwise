@@ -16,9 +16,13 @@ distribution networks. Phases and acceptance criteria are in `docs/ROADMAP.md`.
   service) is merged** (PR 11; CI run 43419018212 green). Design: decision 0010,
   `docs/domain/simulation.md`.
 - **P1.3b (worker: `apps/worker`, five worker functions, `sim.results`, Compose profile
-  `worker`):** implementation complete; pending review, CI verification and merge. Design:
-  decision 0011.
-- **Next:** P1.3c, once approved. Do not start a milestone without owner approval.
+  `worker`) is merged** (PR 12, merge `91440b9`; CI run 43426182696 passed all six jobs,
+  including "Worker (Linux, Compose)"). Design: decision 0011.
+- **P1.3c (reproduction `make reproduce`, result summaries `services/results.py`, retention
+  command, migration 0005):** implementation complete; pending review, CI verification and
+  merge. Design: decision 0012.
+- **Next:** P1.3d simulation API, once approved. Do not start a milestone without owner
+  approval.
 
 ## Hard boundaries
 
