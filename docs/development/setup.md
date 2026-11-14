@@ -188,6 +188,19 @@ Pass its `id` as `scenario_id` when submitting. After `make reproduce`, the job'
 `reproductions` link shows the verdicts. The demonstration grid is synthetic, and its
 results are simulations, not measurements.
 
+## The web app
+
+With the API up (`make up`) and the demonstration grid seeded (`make seed-demo`),
+`make dev-web` serves the web app at <http://localhost:3100>. The **Grid** section lists
+stored grids and shows each grid's metadata (decision 0014). Open it as `localhost`, not
+`127.0.0.1`: the API's CORS allow-list matches the origin exactly. A local database volume
+from before P1.2b needs `make migrate` (or `make up`) before the grid pages have anything to
+show.
+
+The web app fetches from the API in the browser and shows nothing it did not receive:
+an empty list says so, and an unreachable API, a missing development organisation and
+routes that do not exist in this environment each have their own message.
+
 ## Gotchas
 
 - The API answers only to the hosts in `GRIDWISE_ALLOWED_HOSTS` (default `localhost`,
