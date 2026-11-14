@@ -132,8 +132,15 @@ jobs:
         run: |
           job=$(uv run python scripts/worker_smoke.py submit | tail -1)
           uv run python scripts/worker_smoke.py wait "$job" 180
-      - name: The solved job reproduces from its stored input
-        run: uv run python -m gridwise_worker.reproduce --pending
+      - name: Over HTTP, the API queues a job, the worker solves it, the API serves the result
+        run: |
+          job=$(uv run python scripts/worker_smoke.py http-submit http://localhost:8020 | tail -1)
+          echo "HTTP_JOB_ID=$job" >> "$GITHUB_ENV"
+          uv run python scripts/worker_smoke.py http-wait http://localhost:8020 "$job" 180
+      - name: The solved jobs reproduce from their stored input
+        run: |
+          uv run python -m gridwise_worker.reproduce --pending
+          uv run python scripts/worker_smoke.py http-reproductions http://localhost:8020 "$HTTP_JOB_ID"
       - name: The worker stops cleanly on SIGTERM
         run: |
           docker compose --profile worker stop -t 30 worker

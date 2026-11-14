@@ -158,6 +158,36 @@ That changes a switch in the stored simulation model only; nothing is sent to an
 The interactive description is at `http://localhost:8020/docs`. The grid API does not exist
 when `GRIDWISE_ENVIRONMENT` is `staging` or `production` (decision 0009).
 
+## Trying the simulation API
+
+With the worker running as well (`make up-worker`), submit a simulation of the demonstration
+grid. It returns at once with a queued job (decision 0013):
+
+```bash
+curl -s -X POST http://localhost:8020/api/v1/grids/d0000000-0000-4000-8000-000000000002/simulations -H 'Content-Type: application/json' -H 'Idempotency-Key: try-1' -d '{}'
+```
+
+Follow the job until its status is `completed`, `failed` or `cancelled`, then read the
+result (replace `JOB_ID` with the job's `id`):
+
+```bash
+curl -s http://localhost:8020/api/v1/simulations/JOB_ID
+```
+
+```bash
+curl -s http://localhost:8020/api/v1/simulations/JOB_ID/result
+```
+
+A scenario changes a copy of the grid that is simulated, never the stored grid:
+
+```bash
+curl -s -X POST http://localhost:8020/api/v1/scenarios -H 'Content-Type: application/json' -d '{"name": "Peak", "modifications": [{"type": "scale_loads", "factor": 1.2}]}'
+```
+
+Pass its `id` as `scenario_id` when submitting. After `make reproduce`, the job's
+`reproductions` link shows the verdicts. The demonstration grid is synthetic, and its
+results are simulations, not measurements.
+
 ## Gotchas
 
 - The API answers only to the hosts in `GRIDWISE_ALLOWED_HOSTS` (default `localhost`,

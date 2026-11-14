@@ -19,10 +19,11 @@ distribution networks. Phases and acceptance criteria are in `docs/ROADMAP.md`.
   `worker`) is merged** (PR 12, merge `91440b9`; CI run 43426182696 passed all six jobs,
   including "Worker (Linux, Compose)"). Design: decision 0011.
 - **P1.3c (reproduction `make reproduce`, result summaries `services/results.py`, retention
-  command, migration 0005):** implementation complete; pending review, CI verification and
-  merge. Design: decision 0012.
-- **Next:** P1.3d simulation API, once approved. Do not start a milestone without owner
-  approval.
+  command, migration 0005) is merged** (PR 13, merge `2c088ef`; CI run 43603454270 passed
+  all six jobs). Design: decision 0012.
+- **P1.3d (simulation API: `/api/v1/scenarios`, `/api/v1/simulations`, no migration):**
+  implementation complete; pending review, CI verification and merge. Design: decision 0013.
+- **Next:** P1.4 web, once approved. Do not start a milestone without owner approval.
 
 ## Hard boundaries
 
@@ -43,7 +44,8 @@ distribution networks. Phases and acceptance criteria are in `docs/ROADMAP.md`.
 - Bump the engine `__version__` whenever a recorded regression hash changes.
 - A new API route must be added to the allow-list in `tests/unit/test_system.py`. Platform
   endpoints stay read-only; grid writes change stored simulation data only.
-- The development tenant, the grid API and `make seed-demo` exist in `local` and `test` only. Migrations
+- The development tenant, the grid, scenario and simulation APIs and `make seed-demo` exist
+  in `local` and `test` only. The API never runs a power flow or a reproduction. Migrations
   run as `gridwise_owner`, never as `gridwise_app` and never as a superuser.
 
 ## Architecture (one screen)

@@ -18,6 +18,8 @@ is the fixed development tenant in local and test environments only.
 
 import json
 from dataclasses import dataclass
+from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from sqlalchemy.exc import IntegrityError
@@ -29,6 +31,7 @@ from gridwise_api.repositories.grid_mapping import element_keys
 from gridwise_api.repositories.simulations import (
     AttemptRecord,
     JobRecord,
+    ReproductionRecord,
     ScenarioRecord,
     SnapshotRecord,
 )
@@ -134,10 +137,25 @@ class Submission:
     created: bool
 
 
+#: How the job's source grid compares with the grid now: same version, a later version,
+#: or the grid no longer exists. The job itself is unaffected: it solves its own snapshot.
+type SourceStatus = Literal["current", "changed", "deleted"]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class JobView:
+    job: JobRecord
+    source_status: SourceStatus
+    #: The content hash of the job's input snapshot: what the worker solves.
+    input_hash: str
+
+
 @dataclass(frozen=True, slots=True, kw_only=True)
 class JobDetails:
     job: JobRecord
     attempts: list[AttemptRecord]
+    source_status: SourceStatus
+    input_hash: str
 
 
 # --- helpers ------------------------------------------------------------------------------
@@ -171,6 +189,30 @@ def request_fingerprint(
 
 def _element_count(model: GridModel) -> int:
     return sum(len(keys) for keys in element_keys(model).values())
+
+
+def _source_status(job: JobRecord, versions: dict[UUID, int]) -> SourceStatus:
+    if job.source_grid_id is None or job.source_grid_id not in versions:
+        return "deleted"
+    return "current" if versions[job.source_grid_id] == job.source_grid_version else "changed"
+
+
+async def _views(session: TenantSession, jobs: list[JobRecord]) -> list[JobView]:
+    """Each job with how its source grid stands now and its input's hash, read in the same
+    transaction as the jobs."""
+    versions = await repository.grid_versions(
+        session, {job.source_grid_id for job in jobs if job.source_grid_id is not None}
+    )
+    hashes = await repository.snapshot_hashes(session, {job.input_snapshot_id for job in jobs})
+    views = []
+    for job in jobs:
+        input_hash = hashes.get(job.input_snapshot_id)
+        if input_hash is None:  # a foreign key guarantees it exists
+            raise StoredDataIntegrityError
+        views.append(
+            JobView(job=job, source_status=_source_status(job, versions), input_hash=input_hash)
+        )
+    return views
 
 
 # --- the service --------------------------------------------------------------------------
@@ -363,7 +405,13 @@ class SimulationService:
             if job is None:
                 raise JobNotFoundError
             attempts = await repository.list_attempts(session, job_id)
-        return JobDetails(job=job, attempts=attempts)
+            [view] = await _views(session, [job])
+        return JobDetails(
+            job=job,
+            attempts=attempts,
+            source_status=view.source_status,
+            input_hash=view.input_hash,
+        )
 
     async def list_jobs(
         self,
@@ -373,11 +421,30 @@ class SimulationService:
         offset: int,
         grid_id: UUID | None = None,
         status: str | None = None,
-    ) -> tuple[list[JobRecord], int]:
+        submitted_after: datetime | None = None,
+        submitted_before: datetime | None = None,
+    ) -> tuple[list[JobView], int]:
+        """Newest first. ``submitted_after`` is inclusive, ``submitted_before`` exclusive."""
         async with tenant_transaction(self._engine, organization_id) as session:
-            return await repository.list_jobs(
-                session, limit=limit, offset=offset, grid_id=grid_id, status=status
+            jobs, total = await repository.list_jobs(
+                session,
+                limit=limit,
+                offset=offset,
+                grid_id=grid_id,
+                status=status,
+                submitted_after=submitted_after,
+                submitted_before=submitted_before,
             )
+            return await _views(session, jobs), total
+
+    async def list_reproductions(
+        self, organization_id: UUID, job_id: UUID, *, limit: int, offset: int
+    ) -> tuple[list[ReproductionRecord], int]:
+        """The job's reproduction history, newest first. Reading it never reproduces."""
+        async with tenant_transaction(self._engine, organization_id) as session:
+            if await repository.get_job(session, job_id) is None:
+                raise JobNotFoundError
+            return await repository.list_reproductions(session, job_id, limit=limit, offset=offset)
 
     async def cancel(self, organization_id: UUID, job_id: UUID) -> JobRecord:
         """Cancel a queued job. A job that has started or ended is not cancellable."""

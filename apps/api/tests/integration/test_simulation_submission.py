@@ -413,12 +413,12 @@ async def test_jobs_are_listed_newest_first_and_filtered(
     second = (await service(app_async_engine).submit(alpha, grid_id)).job
     await service(app_async_engine).cancel(alpha, first.id)
     jobs, total = await service(app_async_engine).list_jobs(alpha, limit=10, offset=0)
-    assert [job.id for job in jobs] == [second.id, first.id]
+    assert [view.job.id for view in jobs] == [second.id, first.id]
     assert total == 2
     queued, _ = await service(app_async_engine).list_jobs(
         alpha, limit=10, offset=0, status="queued"
     )
-    assert [job.id for job in queued] == [second.id]
+    assert [view.job.id for view in queued] == [second.id]
     by_grid, _ = await service(app_async_engine).list_jobs(
         alpha, limit=10, offset=0, grid_id=uuid.uuid4()
     )
