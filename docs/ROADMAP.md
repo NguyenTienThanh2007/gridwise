@@ -182,7 +182,7 @@ PR 13 merged as `2c088ef`. CI run 43603454270 on the merge commit passed all six
 engine 492, API unit 173 and integration 603, worker processes 13, end-to-end 7, and the
 Compose reproduction reported `"verdict": "match"` with worker exit code 0 on SIGTERM.
 
-#### P1.3d — Simulation API (implementation complete; pending review, CI verification and merge)
+#### P1.3d — Simulation API (merged)
 
 Design: [decision 0013](decisions/0013-simulation-api-contract.md). No migration.
 
@@ -201,9 +201,48 @@ Design: [decision 0013](decisions/0013-simulation-api-contract.md). No migration
 | 11  | Over HTTP, the deployed API queues a job, the deployed worker solves it, and its reproduction is a `match`                                   | CI job "Worker"                              |
 | 12  | All earlier checks still pass                                                                                                                | CI                                           |
 
+PR 14 merged as `75c14cd`. CI run 43609180281 on the merge commit passed all six jobs:
+engine 498, API unit 205 and integration 624, worker processes 13, web 39, end-to-end 7, and
+the HTTP flow in the Worker job (job converged, result HTTP 200, reproduction `match`;
+worker exit code 0).
+
 ### P1.4 — Web
 
 2D network view, asset tables, running a scenario and inspecting results; end-to-end tests.
+Five PRs, in dependency order. Design: [decision 0014](decisions/0014-web-application-architecture.md).
+No backend change is planned; the web app uses the P1.2c and P1.3d APIs as they are.
+
+#### P1.4a — API client, shared UI, grid list and grid page (implementation complete; pending review, CI verification and merge)
+
+| #   | Acceptance criterion                                                                                                          | Evidence                                      |
+| --- | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| 1   | Stored grids are listed with their synthetic origin, version and element counts; an empty list says how to seed the demo grid | `grids.spec.ts`, `grid-list-view.test.tsx`    |
+| 2   | A grid page shows metadata, version and topology hash, labelled synthetic                                                     | `grids.spec.ts`, `grid-detail-view.test.tsx`  |
+| 3   | Unreachable API, routes absent, no development tenant, invalid id and unknown grid each have their own state                  | `client.test.ts`, view tests, `grids.spec.ts` |
+| 4   | Decoders refuse payloads of the wrong shape                                                                                   | `grids.test.ts`, `topology.test.ts`           |
+| 5   | The development-tenant notice is shown wherever tenant data is shown                                                          | view tests, `grids.spec.ts`                   |
+| 6   | No new runtime dependency; the bundle check passes; all earlier checks still pass                                             | CI                                            |
+
+#### P1.4b — 2D network explorer (not started)
+
+The stored network as an SVG diagram at its buses' stored positions (a labelled fallback
+layout otherwise), with an element list for the keyboard and an inspector for the selected
+element.
+
+#### P1.4c — Asset management (not started)
+
+Per-grid asset tables with search and filters; editing name, service state and switch model
+position with `If-Match`; grid rename, description and delete.
+
+#### P1.4d — Simulation workspace (not started)
+
+Scenarios (create, list, delete), submission with an idempotency key, the job list, and the
+job page with polling and cancellation of queued jobs.
+
+#### P1.4e — Results and reproductions (not started)
+
+Summary and element tables from the stored result, no values for a run that did not
+converge, reproduction history; loading on the diagram only when the topology is unchanged.
 
 ## P2 — Data platform
 

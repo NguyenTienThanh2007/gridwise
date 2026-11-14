@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+// Sections that are still placeholders. Grid is real since P1.4a (grids.spec.ts).
 const SECTIONS = [
-  "Grid",
   "Monitoring",
   "Analytics",
   "Forecasting",
@@ -70,9 +70,9 @@ test("every section is reachable and honest about being unimplemented", async ({
   }
 });
 
-test("grid detail route renders without pretending the grid exists", async ({ page }) => {
+test("a grid id that cannot exist is not found, without pretending", async ({ page }) => {
   await page.goto("/grid/demo-feeder");
-  await expect(page.getByText('Requested grid "demo-feeder"')).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Grid not found" })).toBeVisible();
 });
 
 test("dashboard reports an unreachable API instead of failing silently", async ({ page }) => {

@@ -19,7 +19,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     href: "/grid",
     label: "Grid",
     phase: "P1",
-    summary: "Network topology from the grid engine, then the interactive 3D twin (P5).",
+    summary: "Stored grid models, their network and assets (2D); the 3D twin follows in P5.",
   },
   {
     href: "/monitoring",

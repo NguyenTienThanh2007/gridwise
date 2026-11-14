@@ -32,22 +32,24 @@ queued jobs in a child process it can kill, and stores each result with the job'
 **P1.3c (reproduction, result summaries, retention) is merged** (PR 13): `make reproduce`
 re-solves finished jobs and records whether their stored results hold.
 
-**P1.3d (simulation API): implementation complete; pending review, CI verification and
-merge.** `/api/v1/scenarios` and `/api/v1/simulations` create scenarios, submit and follow
+**P1.3d (simulation API) is merged** (PR 14): `/api/v1/scenarios` and `/api/v1/simulations` create scenarios, submit and follow
 simulations, and read results and reproduction history over HTTP.
 
-No power flow runs in the API process: a submission is queued and the worker solves it. The
-web app is unchanged. There is no authentication: the grid, scenario and simulation APIs
+**P1.4a (web foundations and grid pages): implementation complete; pending review, CI
+verification and merge.** The web app lists stored grids and shows each grid's metadata.
+
+No power flow runs in the API process: a submission is queued and the worker solves it. There is no authentication: the grid, scenario and simulation APIs
 exist only in local and test environments and act for one fixed development tenant. See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 What works today:
 
 - FastAPI service with validated configuration, JSON logs, request IDs, one error format
   and liveness/readiness endpoints.
-- PostgreSQL 18 with an Alembic baseline migration (`core.organizations`, the tenant table)
-  and separate owner and runtime database roles.
-- Next.js app shell with the ten product routes and a dashboard that shows live API and
-  database status. The grid, simulation and analytics routes are labelled placeholders.
+- PostgreSQL 18 with Alembic migrations (organisations, grids, simulations, results,
+  reproductions), row-level security and separate owner, runtime and worker roles.
+- Next.js app shell with the ten product routes, a dashboard that shows live API and
+  database status, and a grid list and grid page backed by the API. The simulation,
+  analytics and other routes are labelled placeholders.
 - Grid engine library (`packages/grid-engine`): electrical model with validation and stable
   error codes, AC Newton-Raphson power flow through pandapower, checked against closed-form
   solutions. Its limits are listed in [docs/domain/grid-engine.md](docs/domain/grid-engine.md).

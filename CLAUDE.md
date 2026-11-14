@@ -21,9 +21,14 @@ distribution networks. Phases and acceptance criteria are in `docs/ROADMAP.md`.
 - **P1.3c (reproduction `make reproduce`, result summaries `services/results.py`, retention
   command, migration 0005) is merged** (PR 13, merge `2c088ef`; CI run 43603454270 passed
   all six jobs). Design: decision 0012.
-- **P1.3d (simulation API: `/api/v1/scenarios`, `/api/v1/simulations`, no migration):**
-  implementation complete; pending review, CI verification and merge. Design: decision 0013.
-- **Next:** P1.4 web, once approved. Do not start a milestone without owner approval.
+- **P1.3d (simulation API: `/api/v1/scenarios`, `/api/v1/simulations`, no migration) is
+  merged** (PR 14, merge `75c14cd`; CI run 43609180281 passed all six jobs). Design:
+  decision 0013.
+- **P1.4 (web) is planned as five PRs** (`docs/ROADMAP.md`, decision 0014): a foundations and
+  grids, b network explorer, c asset management, d simulation workspace, e results.
+- **P1.4a (API client, shared UI, grid list and grid page):** implementation complete;
+  pending review, CI verification and merge.
+- Do not start a milestone or the next P1.4 PR without owner approval.
 
 ## Hard boundaries
 
@@ -62,7 +67,11 @@ distribution networks. Phases and acceptance criteria are in `docs/ROADMAP.md`.
   `apps/api` must never import the adapter. Both are enforced by tests. Entry point:
   `run_power_flow(grid, solver)`. Model, equations, error codes and limits:
   `docs/domain/grid-engine.md`.
-- `apps/web`: Next.js 16 app shell. Placeholder routes show no data until the backend has it.
+- `apps/web`: Next.js 16 app shell. Data is fetched in the browser through `src/lib/http`
+  (one request function, one error model) and decoded by hand-written decoders in
+  `src/lib/resources`: a payload of the wrong shape is an error state, never a guess. No
+  mock data in the app; test fixtures live in `src/test/fixtures`. Placeholder routes show
+  no data until the backend has it. No new runtime dependency without a decision.
 - One PostgreSQL 18 server on the TimescaleDB image. Schemas by domain; add each new schema
   to `MANAGED_SCHEMAS` in `models/base.py`.
 - Tenant-owned tables carry `organization_id` and a row-level security policy from their
