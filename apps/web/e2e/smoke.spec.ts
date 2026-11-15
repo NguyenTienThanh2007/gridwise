@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-// Sections that are still placeholders. Grid (P1.4a) and Assets (P1.4c) are real.
-const SECTIONS = ["Monitoring", "Analytics", "Forecasting", "Simulations", "Alerts", "Settings"];
+// Sections that are still placeholders. Grid (P1.4a), Assets (P1.4c) and Simulations (P1.4d)
+// are real.
+const SECTIONS = ["Monitoring", "Analytics", "Forecasting", "Alerts", "Settings"];
 
 test("home redirects to the dashboard, which shows live API status", async ({ page }) => {
   const problems: string[] = [];

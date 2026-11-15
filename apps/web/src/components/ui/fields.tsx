@@ -150,16 +150,19 @@ export function Select<T extends string>({
   options,
   value,
   onChange,
+  wide = false,
 }: {
   label: string;
   options: Option<T>[];
   value: T;
   onChange: (value: T) => void;
+  /** Fill the container's width (forms); otherwise fit the content (filter bars). */
+  wide?: boolean;
 }) {
   const id = useId();
   return (
-    <div>
-      <label htmlFor={id} className="block text-xs text-muted">
+    <div className={wide ? "w-full" : "max-w-full"}>
+      <label htmlFor={id} className="block text-sm font-medium">
         {label}
       </label>
       <select
@@ -169,7 +172,7 @@ export function Select<T extends string>({
           const chosen = options.find((option) => option.value === event.target.value);
           if (chosen !== undefined) onChange(chosen.value);
         }}
-        className="mt-1 rounded border border-line bg-panel px-2 py-1.5 text-sm"
+        className={`${CONTROL} border-line bg-panel ${wide ? "" : "w-auto sm:max-w-xs"} max-w-full truncate`}
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>

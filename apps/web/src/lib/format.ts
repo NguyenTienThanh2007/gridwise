@@ -18,3 +18,8 @@ export function formatQuantity(value: number, unit: string): string {
   const text = String(Number(value.toPrecision(6)));
   return unit === "" ? text : `${text} ${unit}`;
 }
+
+/** The last characters of a time-ordered id (UUIDv7): its start is shared by ids made close together. */
+export function shortId(value: string): string {
+  return `…${value.slice(-8)}`;
+}

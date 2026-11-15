@@ -116,7 +116,7 @@ export function AssetInventory({
           }))}
         />
         <div>
-          <label htmlFor="asset-search" className="block text-xs text-muted">
+          <label htmlFor="asset-search" className="block text-sm font-medium">
             Search name or key
           </label>
           <input

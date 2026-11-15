@@ -14,7 +14,7 @@ import type { GridData } from "@/lib/use-grid-data";
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="border-t border-line py-2 sm:grid sm:grid-cols-3 sm:gap-4">
+    <div className="border-t border-line py-2 first:border-t-0 sm:grid sm:grid-cols-3 sm:gap-4">
       <dt className="text-sm text-muted">{label}</dt>
       <dd className="text-sm sm:col-span-2">{children}</dd>
     </div>
