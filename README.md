@@ -35,8 +35,12 @@ re-solves finished jobs and records whether their stored results hold.
 **P1.3d (simulation API) is merged** (PR 14): `/api/v1/scenarios` and `/api/v1/simulations` create scenarios, submit and follow
 simulations, and read results and reproduction history over HTTP.
 
-**P1.4a (web foundations and grid pages): implementation complete; pending review, CI
-verification and merge.** The web app lists stored grids and shows each grid's metadata.
+**P1.4a (web foundations and grid pages) is merged** (PR 15): the web app lists stored grids
+and shows each grid's metadata.
+
+**P1.4b (2D network explorer): implementation complete; pending review, CI verification and
+merge.** A grid's page draws its stored network as a schematic, with an element list and an
+inspector for each element's stored values.
 
 No power flow runs in the API process: a submission is queued and the worker solves it. There is no authentication: the grid, scenario and simulation APIs
 exist only in local and test environments and act for one fixed development tenant. See [docs/ROADMAP.md](docs/ROADMAP.md).

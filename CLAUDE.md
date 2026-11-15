@@ -26,8 +26,10 @@ distribution networks. Phases and acceptance criteria are in `docs/ROADMAP.md`.
   decision 0013.
 - **P1.4 (web) is planned as five PRs** (`docs/ROADMAP.md`, decision 0014): a foundations and
   grids, b network explorer, c asset management, d simulation workspace, e results.
-- **P1.4a (API client, shared UI, grid list and grid page):** implementation complete;
-  pending review, CI verification and merge.
+- **P1.4a (API client, shared UI, grid list and grid page) is merged** (PR 15, merge
+  `7937449`; CI run 43619109149 passed all six jobs).
+- **P1.4b (2D network explorer on the grid page):** implementation complete; pending review,
+  CI verification and merge.
 - Do not start a milestone or the next P1.4 PR without owner approval.
 
 ## Hard boundaries
