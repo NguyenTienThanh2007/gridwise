@@ -226,7 +226,7 @@ No backend change is planned; the web app uses the P1.2c and P1.3d APIs as they 
 PR 15 merged as `7937449`. CI run 43619109149 on the merge commit passed all six jobs; the
 end-to-end job seeded the demonstration grid and passed 12 tests.
 
-#### P1.4b — 2D network explorer (implementation complete; pending review, CI verification and merge)
+#### P1.4b — 2D network explorer (merged)
 
 The stored network as an SVG diagram on the grid page, with an element list for the
 keyboard and an inspector for the selected element. Layout rules: decision 0014, section 10.
@@ -245,10 +245,26 @@ keyboard and an inspector for the selected element. Layout rules: decision 0014,
 | 10  | The seeded CIGRE MV grid is drawn with all its elements and its three open switches                                                       | `network.spec.ts`                                              |
 | 11  | No new dependency; all earlier checks still pass                                                                                          | CI                                                             |
 
-#### P1.4c — Asset management (not started)
+PR 16 merged as `3f728e3`. CI run 43673794414 on the merge commit passed all six jobs.
 
-Per-grid asset tables with search and filters; editing name, service state and switch model
-position with `If-Match`; grid rename, description and delete.
+#### P1.4c — Asset management (implementation complete; pending review, CI verification and merge)
+
+Overview, Assets and Settings tabs for each grid. Editing rules: decision 0014, section 11.
+
+| #   | Acceptance criterion                                                                                        | Evidence                                                                                        |
+| --- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| 1   | Overview, Assets and Settings tabs with their own addresses; `/assets` chooses a grid                       | `grid-workspace.test.tsx`, `grid-list-view.test.tsx`                                            |
+| 2   | Every element is listed; type, state and text filters work alone and together and are kept in the address   | `filter.test.ts`, `asset-inventory.test.tsx`, `assets.spec.ts`                                  |
+| 3   | Only the name and either the service state or a switch's model position can be edited                       | `asset-edit-form.test.tsx`                                                                      |
+| 4   | Name and description limits as in the API; Save disabled until something changes; Cancel sends nothing      | `assets.test.ts`, `asset-edit-form.test.tsx`, `grid-settings.test.tsx`                          |
+| 5   | A state or model-position change is reviewed, with the simulation-only notice, before it is saved           | `asset-edit-form.test.tsx`, `assets.spec.ts`                                                    |
+| 6   | Every write sends If-Match; after saving, grid and network reload together and the diagram shows the change | `asset-inventory.test.tsx`, `assets.spec.ts`                                                    |
+| 7   | A stale version keeps the draft, shows the current version, overwrites nothing and never resends by itself  | `asset-edit-form.test.tsx`, `assets.spec.ts`                                                    |
+| 8   | Engine refusals and name conflicts are explained; nothing is stored                                         | `asset-edit-form.test.tsx`, `grid-settings.test.tsx`, `assets.spec.ts`, `grid-settings.spec.ts` |
+| 9   | Deleting needs the exact name, explains what jobs keep, sends If-Match and returns to the list              | `delete-grid.test.tsx`, `grid-settings.spec.ts`                                                 |
+| 10  | The keyboard alone filters, selects and edits                                                               | `assets.spec.ts`                                                                                |
+| 11  | End-to-end tests that write use their own copies of the demonstration grid                                  | `e2e/support/grid-copy.ts`                                                                      |
+| 12  | No new dependency, no backend change; all earlier checks still pass                                         | CI                                                                                              |
 
 #### P1.4d — Simulation workspace (not started)
 

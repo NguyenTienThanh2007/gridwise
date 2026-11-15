@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { SINGULAR } from "@/components/network/describe";
 import { ElementInspector } from "@/components/network/element-inspector";
 import { ElementList } from "@/components/network/element-list";
@@ -10,7 +10,6 @@ import { NetworkLegend } from "@/components/network/network-legend";
 import { DataOriginBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { ErrorState } from "@/components/ui/error-state";
 import { Notice } from "@/components/ui/notice";
 import { brokenReferences, findElement } from "@/lib/network/graph";
 import { type Layout, type Point, layoutNetwork } from "@/lib/network/layout";
@@ -21,8 +20,7 @@ import {
   parseElementRef,
 } from "@/lib/network/selection";
 import { type View, centreOn, contains, fitView, zoomView } from "@/lib/network/view";
-import { type Topology, fetchTopology } from "@/lib/resources/topology";
-import { type Loader, useResource } from "@/lib/use-resource";
+import type { Topology } from "@/lib/resources/topology";
 
 /** Where an element is drawn, to bring it into view when it is chosen from the list. */
 function positionOf(layout: Layout, ref: ElementRef): Point | null {
@@ -37,7 +35,7 @@ function positionOf(layout: Layout, ref: ElementRef): Point | null {
   );
 }
 
-function Explorer({ topology, gridVersion }: { topology: Topology; gridVersion: number }) {
+function Explorer({ topology, gridId }: { topology: Topology; gridId: string }) {
   const { network } = topology;
   const broken = useMemo(() => brokenReferences(network), [network]);
   const layout = useMemo(
@@ -87,19 +85,6 @@ function Explorer({ topology, gridVersion }: { topology: Topology; gridVersion: 
 
   return (
     <>
-      {topology.version === gridVersion ? null : (
-        <div className="mb-4">
-          <Notice tone="warn" title="The grid changed while this page loaded" role="status">
-            <p>
-              The details above are version {gridVersion}; the diagram is version {topology.version}
-              . Reload to see one version.
-            </p>
-            <Button className="mt-2" onClick={() => window.location.reload()}>
-              Reload page
-            </Button>
-          </Notice>
-        </div>
-      )}
       {layout.source === "fallback" ? (
         <div className="mb-4">
           <Notice title="Schematic layout">
@@ -146,6 +131,9 @@ function Explorer({ topology, gridVersion }: { topology: Topology; gridVersion: 
             network={network}
             selected={selected}
             onSelect={(ref) => select(ref, true)}
+            editHref={(ref) =>
+              `/grid/${gridId}/assets?${SELECTION_PARAMETER}=${encodeURIComponent(formatElementRef(ref))}`
+            }
           />
           <ElementList
             network={network}
@@ -158,32 +146,14 @@ function Explorer({ topology, gridVersion }: { topology: Topology; gridVersion: 
   );
 }
 
-export function NetworkExplorer({
-  gridId,
-  gridVersion,
-  load = fetchTopology,
-}: {
-  gridId: string;
-  gridVersion: number;
-  load?: typeof fetchTopology;
-}) {
-  const loader = useCallback<Loader<Topology>>((signal) => load(gridId, signal), [gridId, load]);
-  const [state, reload] = useResource(loader);
-
+/** The stored network of one grid; the grid workspace loads it with the grid's details. */
+export function NetworkExplorer({ topology, gridId }: { topology: Topology; gridId: string }) {
   return (
     <section aria-labelledby="network-title" className="mt-8">
       <h2 id="network-title" className="mb-3 text-lg font-semibold">
         Network
       </h2>
-      {state.status === "loading" ? (
-        <p role="status" className="text-sm text-muted">
-          Loading network…
-        </p>
-      ) : state.status === "error" ? (
-        <ErrorState failure={state.failure} resource="grid" onRetry={reload} />
-      ) : (
-        <Explorer topology={state.data} gridVersion={gridVersion} />
-      )}
+      <Explorer topology={topology} gridId={gridId} />
     </section>
   );
 }

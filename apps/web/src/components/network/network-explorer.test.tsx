@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NetworkExplorer } from "@/components/network/network-explorer";
-import type { ApiFailure, ApiResult } from "@/lib/http/client";
+import type { ApiResult } from "@/lib/http/client";
 import type { Network, Topology } from "@/lib/resources/topology";
 import { bus, feeder, line, network } from "@/test/fixtures/networks";
 
@@ -51,10 +51,9 @@ function topology(net: Network, version = 3): ApiResult<Topology> {
   };
 }
 
-function explore(result: ApiResult<Topology>, gridVersion = 3) {
-  return render(
-    <NetworkExplorer gridId={GRID_ID} gridVersion={gridVersion} load={async () => result} />,
-  );
+function explore(result: ApiResult<Topology>) {
+  if (!result.ok) throw new Error("the explorer is given a loaded topology");
+  return render(<NetworkExplorer gridId={GRID_ID} topology={result.data} />);
 }
 
 beforeEach(() => address.set(""));
@@ -150,20 +149,13 @@ describe("NetworkExplorer", () => {
     expect(await screen.findByText("This grid has no buses to draw")).toBeInTheDocument();
   });
 
-  it("warns when the diagram and the grid details are different versions", async () => {
-    explore(topology(feeder(), 4), 3);
-    expect(await screen.findByText("The grid changed while this page loaded")).toBeInTheDocument();
-    expect(
-      screen.getByText(/details above are version 3; the diagram is version 4/),
-    ).toBeInTheDocument();
-  });
-
-  it.each<[ApiFailure, string]>([
-    [{ kind: "unreachable", message: "No response from the API" }, "The API is unreachable"],
-    [{ kind: "unexpected", status: 200, message: "bad shape" }, "Unexpected answer from the API"],
-    [{ kind: "not_found", code: "grid_not_found", message: "Grid not found" }, "No such grid"],
-  ])("shows its own state for %o", async (failure, title) => {
-    explore({ ok: false, failure });
-    expect(await screen.findByRole("alert")).toHaveTextContent(title);
+  it("links the inspected element to its edit form in the Assets tab", async () => {
+    explore(topology(feeder()));
+    const list = within(await screen.findByRole("region", { name: "Elements" }));
+    fireEvent.click(list.getByRole("button", { name: /Line l-ab/ }));
+    expect(screen.getByRole("link", { name: "Edit in Assets" })).toHaveAttribute(
+      "href",
+      `/grid/${GRID_ID}/assets?element=lines%3Al-ab`,
+    );
   });
 });

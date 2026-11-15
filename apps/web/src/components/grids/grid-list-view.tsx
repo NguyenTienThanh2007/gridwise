@@ -14,24 +14,39 @@ import { type Loader, useResource } from "@/lib/use-resource";
 
 export const PAGE_SIZE = 25;
 
-const COLUMNS: Column<Grid>[] = [
-  {
-    header: "Name",
-    cell: (grid) => (
-      <Link href={`/grid/${grid.id}`} className="font-medium text-accent hover:underline">
-        {grid.name}
-      </Link>
-    ),
-  },
-  { header: "Data", cell: (grid) => <DataOriginBadge origin={grid.dataOrigin} /> },
-  { header: "Version", cell: (grid) => grid.version, numeric: true },
-  { header: "Buses", cell: (grid) => grid.elementCounts.buses, numeric: true },
-  { header: "Lines", cell: (grid) => grid.elementCounts.lines, numeric: true },
-  { header: "Transformers", cell: (grid) => grid.elementCounts.transformers, numeric: true },
-  { header: "Updated", cell: (grid) => formatTimestamp(grid.updatedAt) },
-];
+function columns(section: "overview" | "assets"): Column<Grid>[] {
+  return [
+    {
+      header: "Name",
+      cell: (grid) => (
+        <Link
+          href={section === "assets" ? `/grid/${grid.id}/assets` : `/grid/${grid.id}`}
+          className="font-medium text-accent hover:underline"
+        >
+          {grid.name}
+        </Link>
+      ),
+    },
+    { header: "Data", cell: (grid) => <DataOriginBadge origin={grid.dataOrigin} /> },
+    { header: "Version", cell: (grid) => grid.version, numeric: true },
+    { header: "Buses", cell: (grid) => grid.elementCounts.buses, numeric: true },
+    { header: "Lines", cell: (grid) => grid.elementCounts.lines, numeric: true },
+    { header: "Transformers", cell: (grid) => grid.elementCounts.transformers, numeric: true },
+    { header: "Updated", cell: (grid) => formatTimestamp(grid.updatedAt) },
+  ];
+}
 
-export function GridListView({ load = fetchGrids }: { load?: typeof fetchGrids }) {
+export function GridListView({
+  load = fetchGrids,
+  section = "overview",
+  deleted = false,
+}: {
+  load?: typeof fetchGrids;
+  /** Which page of a grid the names link to. */
+  section?: "overview" | "assets";
+  /** Arrived here after deleting a grid. */
+  deleted?: boolean;
+}) {
   const [offset, setOffset] = useState(0);
   const loader = useCallback<Loader<GridPage>>(
     (signal) => load({ limit: PAGE_SIZE, offset }, signal),
@@ -42,6 +57,11 @@ export function GridListView({ load = fetchGrids }: { load?: typeof fetchGrids }
   return (
     <>
       <DevTenantNotice />
+      {deleted ? (
+        <p role="status" className="mb-4 text-sm font-medium text-ok">
+          The grid was deleted.
+        </p>
+      ) : null}
       {state.status === "loading" ? (
         <p role="status" className="text-sm text-muted">
           Loading grids…
@@ -62,7 +82,7 @@ export function GridListView({ load = fetchGrids }: { load?: typeof fetchGrids }
           </h2>
           <DataTable
             caption="Stored grids"
-            columns={COLUMNS}
+            columns={columns(section)}
             rows={state.data.items}
             rowKey={(grid) => grid.id}
           />

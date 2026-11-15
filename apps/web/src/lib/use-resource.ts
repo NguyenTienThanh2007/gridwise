@@ -21,8 +21,14 @@ interface Settled<T> {
  * Loads one resource when `load` changes (memoise it with `useCallback`), and again on
  * `reload()`. The request is aborted when the component unmounts or the loader changes, and
  * a late answer never overwrites a newer one.
+ *
+ * With `keepPrevious`, a reload of the same loader keeps the last answer on screen until the
+ * new one arrives, instead of showing "loading": forms below it keep their state.
  */
-export function useResource<T>(load: Loader<T>): [ResourceState<T>, () => void] {
+export function useResource<T>(
+  load: Loader<T>,
+  { keepPrevious = false }: { keepPrevious?: boolean } = {},
+): [ResourceState<T>, () => void] {
   const [attempt, setAttempt] = useState(0);
   const [settled, setSettled] = useState<Settled<T> | null>(null);
 
@@ -43,5 +49,6 @@ export function useResource<T>(load: Loader<T>): [ResourceState<T>, () => void] 
 
   const reload = useCallback(() => setAttempt((value) => value + 1), []);
   const current = settled !== null && settled.load === load && settled.attempt === attempt;
-  return [current ? settled.state : { status: "loading" }, reload];
+  const kept = keepPrevious && settled !== null && settled.load === load;
+  return [current || kept ? settled.state : { status: "loading" }, reload];
 }
