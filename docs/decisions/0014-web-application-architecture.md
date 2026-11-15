@@ -96,6 +96,36 @@ A job page polls its job every second for the first ten seconds, then every two 
 then every five, pauses while the tab is hidden, keeps at most one request in flight, and
 stops at a terminal status. Lists refresh on request.
 
+### 10. The network diagram (P1.4b)
+
+The explorer draws the stored network as SVG, with no graphics library.
+
+- **Positions.** Buses use their stored diagram positions when every bus has one; y is
+  flipped (it grows upwards in the data) and the drawing is scaled so the closest buses are
+  80 units apart. If any bus has no position, every bus is placed by the fallback layout,
+  with a notice: mixing stored and computed positions would look arbitrary.
+- **Fallback layout.** Buses joined by lines, transformers and bus couplers form connected
+  parts. Parts with an external grid come first, then by smallest key. Each part is laid out
+  in layers by breadth-first search from its external-grid buses (or its smallest key),
+  visiting neighbours in natural key order; a layer is ordered by parent, then key. Parts
+  sit side by side. The same network always gives the same drawing.
+- **What is drawn.** Exactly the stored relationships: each line, transformer and bus
+  coupler between its own buses (parallel ones fanned out); each line or transformer switch
+  on its element, a quarter of the way from the bus it sits at; loads, generators and
+  external grids next to their bus (four per type per bus, then a "+n" badge). Connections
+  are drawn whatever their service state or switch position, so the drawing does not move
+  when a switch changes.
+- **What is not computed.** Energisation, supply paths or any other electrical state from
+  switch positions: that is the solver's job and comes with results (P1.4e).
+- **Broken references** (impossible for a grid the engine accepted) are listed and nothing
+  is drawn, rather than guessing a connection.
+- **Interaction.** Click an element, or choose it in the element list, which is the keyboard
+  path; the inspector shows its stored values and selects what it refers to. The selection
+  is kept in the address (`?element=lines:line-6-7`). Zoom in, zoom out and fit are buttons;
+  dragging pans; the mouse wheel scrolls the page, never the diagram.
+- **States** are told apart by shape and dash as well as colour: an open switch is a hollow
+  square, a closed one filled; out-of-service elements are dashed and named so.
+
 ## Consequences
 
 - P1.4 is five PRs (roadmap): a foundations and grids, b network explorer, c asset

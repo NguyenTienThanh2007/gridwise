@@ -212,7 +212,7 @@ worker exit code 0).
 Five PRs, in dependency order. Design: [decision 0014](decisions/0014-web-application-architecture.md).
 No backend change is planned; the web app uses the P1.2c and P1.3d APIs as they are.
 
-#### P1.4a — API client, shared UI, grid list and grid page (implementation complete; pending review, CI verification and merge)
+#### P1.4a — API client, shared UI, grid list and grid page (merged)
 
 | #   | Acceptance criterion                                                                                                          | Evidence                                      |
 | --- | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
@@ -223,11 +223,27 @@ No backend change is planned; the web app uses the P1.2c and P1.3d APIs as they 
 | 5   | The development-tenant notice is shown wherever tenant data is shown                                                          | view tests, `grids.spec.ts`                   |
 | 6   | No new runtime dependency; the bundle check passes; all earlier checks still pass                                             | CI                                            |
 
-#### P1.4b — 2D network explorer (not started)
+PR 15 merged as `7937449`. CI run 43619109149 on the merge commit passed all six jobs; the
+end-to-end job seeded the demonstration grid and passed 12 tests.
 
-The stored network as an SVG diagram at its buses' stored positions (a labelled fallback
-layout otherwise), with an element list for the keyboard and an inspector for the selected
-element.
+#### P1.4b — 2D network explorer (implementation complete; pending review, CI verification and merge)
+
+The stored network as an SVG diagram on the grid page, with an element list for the
+keyboard and an inspector for the selected element. Layout rules: decision 0014, section 10.
+
+| #   | Acceptance criterion                                                                                                                      | Evidence                                                       |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| 1   | Stored positions are used when every bus has one (y flipped, scaled); otherwise every bus is placed by the fallback layout, with a notice | `layout.test.ts`, `network-explorer.test.tsx`                  |
+| 2   | The fallback layout is deterministic, starts at external-grid buses and keeps separate parts apart                                        | `layout.test.ts`                                               |
+| 3   | Each line, transformer and bus coupler is one connection between its own buses; parallel connections are separated                        | `layout.test.ts`, `graph.test.ts`                              |
+| 4   | A switch is drawn on its element at its own bus; a broken reference is listed and nothing is drawn                                        | `layout.test.ts`, `graph.test.ts`, `network-explorer.test.tsx` |
+| 5   | Open and closed switches and out-of-service elements differ by shape or dash and by name                                                  | `network-canvas.test.tsx`                                      |
+| 6   | Selecting in the diagram or the list shows the element's stored values; missing values are "not set", never zero; references select       | `element-inspector.test.tsx`, `network.spec.ts`                |
+| 7   | The selection is kept in the address; the keyboard alone reaches and selects any element                                                  | `network-explorer.test.tsx`, `network.spec.ts`                 |
+| 8   | Loading, API failures, wrong shapes, no buses and a version mismatch each have their own state                                            | `network-explorer.test.tsx`                                    |
+| 9   | Labelled synthetic; no live measurements or electrical state claimed or computed                                                          | `network-explorer.test.tsx`, `network.spec.ts`                 |
+| 10  | The seeded CIGRE MV grid is drawn with all its elements and its three open switches                                                       | `network.spec.ts`                                              |
+| 11  | No new dependency; all earlier checks still pass                                                                                          | CI                                                             |
 
 #### P1.4c — Asset management (not started)
 

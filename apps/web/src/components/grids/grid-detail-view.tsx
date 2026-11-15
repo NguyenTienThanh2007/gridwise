@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { type ReactNode, useCallback } from "react";
+import { type ReactNode, Suspense, useCallback } from "react";
+import { NetworkExplorer } from "@/components/network/network-explorer";
 import { DataOriginBadge } from "@/components/ui/badge";
 import { type Column, DataTable } from "@/components/ui/data-table";
 import { DevTenantNotice } from "@/components/ui/dev-tenant-notice";
@@ -17,6 +18,7 @@ import {
   fetchGrid,
   totalElements,
 } from "@/lib/resources/grids";
+import { fetchTopology } from "@/lib/resources/topology";
 import { type Loader, useResource } from "@/lib/use-resource";
 
 const NOT_A_GRID_ID: ApiResult<Grid> = {
@@ -33,7 +35,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-function GridDetail({ grid }: { grid: Grid }) {
+function GridDetail({ grid, loadTopology }: { grid: Grid; loadTopology: typeof fetchTopology }) {
   const columns: Column<ElementType>[] = [
     { header: "Element type", cell: (type) => ELEMENT_TYPE_LABELS[type] },
     { header: "Count", cell: (type) => grid.elementCounts[type], numeric: true },
@@ -89,20 +91,22 @@ function GridDetail({ grid }: { grid: Grid }) {
         </section>
       </div>
 
-      <section
-        aria-label="Network diagram"
-        className="mt-6 max-w-3xl rounded-lg border border-dashed border-line bg-panel p-6"
-      >
-        <p className="font-medium">Network diagram: not implemented yet</p>
-        <p className="mt-2 text-sm text-muted">
-          The two-dimensional network explorer arrives in P1.4b, and asset tables in P1.4c.
-        </p>
-      </section>
+      <Suspense fallback={<p className="mt-8 text-sm text-muted">Loading network…</p>}>
+        <NetworkExplorer gridId={grid.id} gridVersion={grid.version} load={loadTopology} />
+      </Suspense>
     </>
   );
 }
 
-export function GridDetailView({ id, load = fetchGrid }: { id: string; load?: typeof fetchGrid }) {
+export function GridDetailView({
+  id,
+  load = fetchGrid,
+  loadTopology = fetchTopology,
+}: {
+  id: string;
+  load?: typeof fetchGrid;
+  loadTopology?: typeof fetchTopology;
+}) {
   const loader = useCallback<Loader<Grid>>(
     // An id that is not a UUID cannot name a grid: no request is made for it.
     (signal) => (isUuid(id) ? load(id, signal) : Promise.resolve(NOT_A_GRID_ID)),
@@ -130,7 +134,7 @@ export function GridDetailView({ id, load = fetchGrid }: { id: string; load?: ty
           </p>
         </>
       ) : (
-        <GridDetail grid={state.data} />
+        <GridDetail grid={state.data} loadTopology={loadTopology} />
       )}
     </>
   );

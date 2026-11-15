@@ -12,3 +12,9 @@ export function formatTimestamp(value: string): string {
 export function shortHash(value: string, length = 12): string {
   return value.length <= length ? value : `${value.slice(0, length)}…`;
 }
+
+/** A stored quantity with its unit, to six significant digits: `0.07 %`, `110 kV`. */
+export function formatQuantity(value: number, unit: string): string {
+  const text = String(Number(value.toPrecision(6)));
+  return unit === "" ? text : `${text} ${unit}`;
+}

@@ -6,6 +6,15 @@ import type { fetchGrid } from "@/lib/resources/grids";
 import { type Grid, decodeGrid } from "@/lib/resources/grids";
 import { FIXTURE_GRID_ID, fixtureGrid } from "@/test/fixtures/grids";
 
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/grid/x",
+  useRouter: () => ({ replace: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+}));
+
+/** The network loads separately; these tests are about the grid's own details. */
+const pendingTopology = () => new Promise<never>(() => undefined);
+
 function found(overrides: Record<string, unknown> = {}): ApiResult<Grid> {
   const data = decodeGrid(fixtureGrid(overrides));
   if (data === null) throw new Error("fixture does not decode");
@@ -21,7 +30,13 @@ function found(overrides: Record<string, unknown> = {}): ApiResult<Grid> {
 
 describe("GridDetailView", () => {
   it("shows the stored model's metadata, labelled synthetic", async () => {
-    render(<GridDetailView id={FIXTURE_GRID_ID} load={async () => found()} />);
+    render(
+      <GridDetailView
+        loadTopology={pendingTopology}
+        id={FIXTURE_GRID_ID}
+        load={async () => found()}
+      />,
+    );
     expect(
       await screen.findByRole("heading", { level: 1, name: "Fixture feeder" }),
     ).toBeInTheDocument();
@@ -33,12 +48,12 @@ describe("GridDetailView", () => {
     const elements = screen.getByRole("table", { name: "Elements by type" });
     expect(elements).toHaveTextContent("External grids1");
     expect(screen.getByText(/Development mode/)).toBeInTheDocument();
-    expect(screen.getByText(/arrives in P1.4b/)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Network" })).toBeInTheDocument();
   });
 
   it("makes no request for an id that cannot be a grid", async () => {
     const load = vi.fn<typeof fetchGrid>();
-    render(<GridDetailView id="demo-feeder" load={load} />);
+    render(<GridDetailView loadTopology={pendingTopology} id="demo-feeder" load={load} />);
     expect(
       await screen.findByRole("heading", { level: 1, name: "Grid not found" }),
     ).toBeInTheDocument();
@@ -62,7 +77,13 @@ describe("GridDetailView", () => {
   });
 
   it("omits an empty description", async () => {
-    render(<GridDetailView id={FIXTURE_GRID_ID} load={async () => found({ description: "" })} />);
+    render(
+      <GridDetailView
+        loadTopology={pendingTopology}
+        id={FIXTURE_GRID_ID}
+        load={async () => found({ description: "" })}
+      />,
+    );
     await screen.findByRole("heading", { level: 1, name: "Fixture feeder" });
     expect(screen.queryByText("Unit-test fixture, not a real network.")).not.toBeInTheDocument();
   });
