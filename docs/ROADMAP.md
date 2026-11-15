@@ -247,7 +247,7 @@ keyboard and an inspector for the selected element. Layout rules: decision 0014,
 
 PR 16 merged as `3f728e3`. CI run 43673794414 on the merge commit passed all six jobs.
 
-#### P1.4c — Asset management (implementation complete; pending review, CI verification and merge)
+#### P1.4c — Asset management (merged)
 
 Overview, Assets and Settings tabs for each grid. Editing rules: decision 0014, section 11.
 
@@ -266,10 +266,24 @@ Overview, Assets and Settings tabs for each grid. Editing rules: decision 0014, 
 | 11  | End-to-end tests that write use their own copies of the demonstration grid                                  | `e2e/support/grid-copy.ts`                                                                      |
 | 12  | No new dependency, no backend change; all earlier checks still pass                                         | CI                                                                                              |
 
-#### P1.4d — Simulation workspace (not started)
+PR 17 merged as `fb200c1`. CI run 43678159611 on the merge commit passed all six jobs.
 
-Scenarios (create, list, delete), submission with an idempotency key, the job list, and the
-job page with polling and cancellation of queued jobs.
+#### P1.4d — Simulation workspace (implementation complete; pending review, CI verification and merge)
+
+Jobs, New simulation and Scenarios tabs under `/simulations`, and a page per job. Rules:
+decision 0014, section 12.
+
+| #   | Acceptance criterion                                                                                                                                         | Evidence                                                                   |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| 1   | Scenarios are listed with their changes in words, created from a form with the API's and engine's rules, and deleted after confirmation                      | `scenario-form.test.tsx`, `scenarios-view.test.tsx`, `simulations.spec.ts` |
+| 2   | A submission sends the grid version on screen as If-Match and one idempotency key per distinct request                                                       | `simulations.test.ts`, `new-simulation-form.test.tsx`                      |
+| 3   | A stale grid, an inapplicable scenario and solver options outside the engine's bounds are explained; nothing is queued                                       | `new-simulation-form.test.tsx`                                             |
+| 4   | The job page follows the job (1 s, then 2 s, then 5 s), pauses while hidden, stops at a final status, and survives a failed refresh                          | `use-polling.test.tsx`, `simulations.spec.ts`                              |
+| 5   | Queued, running, completed (converged or not), failed and cancelled each say what they mean in words; no values are promised for a run that did not converge | `job-view.test.tsx`, `simulations.spec.ts`                                 |
+| 6   | Only a queued job offers cancel, after confirmation; a refused cancel is explained                                                                           | `job-view.test.tsx`, `simulations.spec.ts`                                 |
+| 7   | The job list names grids and scenarios, filters by grid and status in the address, and refreshes only on request                                             | `jobs-view.test.tsx`, `simulations.spec.ts`                                |
+| 8   | Submitted from the grid page, a simulation of the seeded grid is solved by the real worker and shown as converged                                            | `simulations.spec.ts` (CI end-to-end job runs the worker)                  |
+| 9   | No new dependency, no backend change; all earlier checks still pass                                                                                          | CI                                                                         |
 
 #### P1.4e — Results and reproductions (not started)
 

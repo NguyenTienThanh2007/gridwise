@@ -43,7 +43,8 @@ export const NAV_ITEMS: readonly NavItem[] = [
     href: "/simulations",
     label: "Simulations",
     phase: "P1",
-    summary: "Deterministic power-flow scenarios and their results.",
+    summary:
+      "Queue power-flow simulations of stored grids, with or without a scenario, and follow them.",
   },
   {
     href: "/alerts",

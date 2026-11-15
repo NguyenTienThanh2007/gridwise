@@ -91,8 +91,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - run: cp .env.example .env
-      - name: Start postgres, migrations and API
-        run: docker compose up -d --build --wait
+      - name: Start postgres, migrations, API and worker (the worker solves submitted simulations)
+        run: docker compose --profile worker up -d --build --wait
       - name: Seed the synthetic demonstration grid (local environment only)
         run: docker compose run --rm -e GRIDWISE_ENVIRONMENT=local migrate python -m gridwise_api.seed
       - uses: pnpm/action-setup@v6
@@ -107,7 +107,7 @@ jobs:
       - run: pnpm test:e2e
       - name: Stack logs
         if: failure()
-        run: docker compose logs --no-color
+        run: docker compose --profile worker logs --no-color
       - uses: actions/upload-artifact@v7
         if: failure()
         with:

@@ -36,6 +36,12 @@ function Workspace({ data, tab, reload }: { data: GridData; tab: GridTab; reload
           <h1 className="text-2xl font-semibold">{grid.name}</h1>
           <DataOriginBadge origin={grid.dataOrigin} />
           <span className="text-sm tabular-nums text-muted">Version {grid.version}</span>
+          <Link
+            href={`/simulations/new?grid=${grid.id}`}
+            className="ml-auto rounded border border-line bg-panel px-3 py-1.5 text-sm font-medium hover:bg-surface"
+          >
+            Simulate this grid
+          </Link>
         </div>
         {grid.description === "" ? null : (
           <p className="mt-1 max-w-3xl text-sm text-muted">{grid.description}</p>

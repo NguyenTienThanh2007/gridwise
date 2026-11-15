@@ -14,8 +14,26 @@ export interface GridCopy {
   name: string;
 }
 
+/**
+ * One more try after a network error only (for example a keep-alive connection the server
+ * closed just as it was reused). Safe for these helpers: reads repeat, and a repeated
+ * delete carries If-Match, so it can only be refused, never applied twice. Creating a copy
+ * is not retried.
+ */
+async function once<T>(call: () => Promise<T>): Promise<T> {
+  try {
+    return await call();
+  } catch (error) {
+    const network = error instanceof Error && /ECONNRESET|socket hang up/.test(error.message);
+    if (!network) throw error;
+    return call();
+  }
+}
+
 export async function copyDemoGrid(request: APIRequestContext, label: string): Promise<GridCopy> {
-  const topology = await request.get(`${API_URL}/api/v1/grids/${DEMO_GRID_ID}/topology`);
+  const topology = await once(() =>
+    request.get(`${API_URL}/api/v1/grids/${DEMO_GRID_ID}/topology`),
+  );
   expect(topology.ok()).toBe(true);
   const name = `E2E ${label} ${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const created = await request.post(`${API_URL}/api/v1/grids`, {
@@ -30,7 +48,7 @@ export async function copyDemoGrid(request: APIRequestContext, label: string): P
 }
 
 export async function gridVersion(request: APIRequestContext, id: string): Promise<number | null> {
-  const response = await request.get(`${API_URL}/api/v1/grids/${id}`);
+  const response = await once(() => request.get(`${API_URL}/api/v1/grids/${id}`));
   if (response.status() === 404) return null;
   return ((await response.json()) as { version: number }).version;
 }
@@ -38,9 +56,11 @@ export async function gridVersion(request: APIRequestContext, id: string): Promi
 export async function deleteIfPresent(request: APIRequestContext, id: string): Promise<void> {
   const version = await gridVersion(request, id);
   if (version === null) return;
-  await request.delete(`${API_URL}/api/v1/grids/${id}`, {
-    headers: { "If-Match": `"${version}"` },
-  });
+  await once(() =>
+    request.delete(`${API_URL}/api/v1/grids/${id}`, {
+      headers: { "If-Match": `"${version}"` },
+    }),
+  );
 }
 
 /** Presses Tab until `target` has the focus: the keyboard path, step by step. */

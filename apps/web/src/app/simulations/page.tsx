@@ -1,8 +1,24 @@
 import type { Metadata } from "next";
-import { PlannedFeature } from "@/components/planned-feature";
+import { Suspense } from "react";
+import { PageHeader } from "@/components/page-header";
+import { JobsView } from "@/components/simulations/jobs-view";
+import { SimulationTabs } from "@/components/simulations/simulation-tabs";
+import { DevTenantNotice } from "@/components/ui/dev-tenant-notice";
 
 export const metadata: Metadata = { title: "Simulations" };
 
 export default function Page() {
-  return <PlannedFeature href="/simulations" />;
+  return (
+    <>
+      <PageHeader
+        title="Simulations"
+        summary="Deterministic power-flow simulations of stored synthetic grids, queued and solved by a separate worker. Results are simulated, not measured."
+      />
+      <DevTenantNotice />
+      <SimulationTabs current="jobs" />
+      <Suspense fallback={<p className="text-sm text-muted">Loading jobs…</p>}>
+        <JobsView />
+      </Suspense>
+    </>
+  );
 }

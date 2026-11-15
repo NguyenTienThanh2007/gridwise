@@ -150,6 +150,29 @@ The explorer draws the stored network as SVG, with no graphics library.
 - **Filters** live in the component and are copied to the address, built from the live URL:
   reading them back from the router would lose keystrokes made before it caught up.
 
+### 12. Simulation workspace (P1.4d)
+
+- **Where.** `/simulations` has three tabs: Jobs, New simulation and Scenarios; each job has
+  its own page. A grid's header links to a new simulation of that grid.
+- **Submitting** sends the grid version on screen as `If-Match`, so a job simulates exactly
+  what the user saw, and an `Idempotency-Key` per distinct request: retrying the same
+  request (for example after a network error) reuses the key and can never create a second
+  job; changing anything makes a new key. Solver options are checked against the engine's
+  bounds before sending. A stale grid (`412`) or a scenario that does not fit the grid
+  (`422`) is explained and nothing is queued.
+- **Scenarios** are created from a form that offers the four kinds of change, checks them
+  with the engine's rules, and shows the engine's reasons under the change they concern.
+  They are never edited; deleting asks for confirmation and says that jobs keep their copy.
+  Switch changes are described as model positions in the simulated copy.
+- **A job page** follows its job as in section 9 and stops at a final status. It says what
+  each status means in words, offers cancel only while the job is queued (after
+  confirmation), and explains a refused cancel. A completed job's values arrive with P1.4e;
+  a run that did not converge is said to have none.
+- **Job ids** are time-ordered (UUIDv7), so they are shortened to their last characters.
+- **The end-to-end job** starts the worker profile, so the browser tests follow real jobs to
+  completion. The queued state, which a running worker leaves within a second, is tested
+  by rewriting a real response in the browser.
+
 ## Consequences
 
 - P1.4 is five PRs (roadmap): a foundations and grids, b network explorer, c asset

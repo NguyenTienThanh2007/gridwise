@@ -30,7 +30,9 @@ distribution networks. Phases and acceptance criteria are in `docs/ROADMAP.md`.
   `7937449`; CI run 43619109149 passed all six jobs).
 - **P1.4b (2D network explorer on the grid page) is merged** (PR 16, merge `3f728e3`; CI
   run 43673794414 passed all six jobs).
-- **P1.4c (asset management: Assets and Settings tabs, If-Match edits, grid delete):**
+- **P1.4c (asset management: Assets and Settings tabs, If-Match edits, grid delete) is
+  merged** (PR 17, merge `fb200c1`; CI run 43678159611 passed all six jobs).
+- **P1.4d (simulation workspace: scenarios, submission, job list, followed job page):**
   implementation complete; pending review, CI verification and merge.
 - Do not start a milestone or the next P1.4 PR without owner approval.
 
