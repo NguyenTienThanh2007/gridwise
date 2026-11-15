@@ -38,9 +38,13 @@ simulations, and read results and reproduction history over HTTP.
 **P1.4a (web foundations and grid pages) is merged** (PR 15): the web app lists stored grids
 and shows each grid's metadata.
 
-**P1.4b (2D network explorer): implementation complete; pending review, CI verification and
-merge.** A grid's page draws its stored network as a schematic, with an element list and an
+**P1.4b (2D network explorer) is merged** (PR 16): A grid's page draws its stored network as a schematic, with an element list and an
 inspector for each element's stored values.
+
+**P1.4c (asset management): implementation complete; pending review, CI verification and
+merge.** Each grid has Assets and Settings tabs: filter its elements, rename them, change
+their service state or a switch's model position, and rename, describe or delete the grid.
+Every change edits the stored simulation model only.
 
 No power flow runs in the API process: a submission is queued and the worker solves it. There is no authentication: the grid, scenario and simulation APIs
 exist only in local and test environments and act for one fixed development tenant. See [docs/ROADMAP.md](docs/ROADMAP.md).

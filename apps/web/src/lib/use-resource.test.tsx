@@ -51,3 +51,18 @@ describe("useResource", () => {
     expect(result.current[0]).toMatchObject({ data: "fast" });
   });
 });
+
+describe("useResource with keepPrevious", () => {
+  it("keeps the last answer on screen while reloading", async () => {
+    let calls = 0;
+    let release: (value: ApiResult<string>) => void = () => undefined;
+    const load: Loader<string> = () =>
+      ++calls === 1 ? Promise.resolve(ok("first")) : new Promise((resolve) => (release = resolve));
+    const { result } = renderHook(() => useResource(load, { keepPrevious: true }));
+    await waitFor(() => expect(result.current[0]).toMatchObject({ data: "first" }));
+    act(() => result.current[1]());
+    expect(result.current[0]).toMatchObject({ data: "first" });
+    await act(async () => release(ok("second")));
+    expect(result.current[0]).toMatchObject({ data: "second" });
+  });
+});

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { SINGULAR, stateText } from "@/components/network/describe";
 import { Value } from "@/components/ui/value";
@@ -37,10 +38,16 @@ export function ElementInspector({
   network,
   selected,
   onSelect,
+  editHref,
+  children,
 }: {
   network: Network;
   selected: ElementRef | null;
   onSelect: (ref: ElementRef) => void;
+  /** Where this element can be edited; the inspector itself never changes anything. */
+  editHref?: (ref: ElementRef) => string;
+  /** Shown under the stored values, for example an edit form. */
+  children?: ReactNode;
 }) {
   const element = selected === null ? null : findElement(network, selected);
 
@@ -284,6 +291,14 @@ export function ElementInspector({
       {element === null ? null : (
         <p className="mt-4 text-xs text-muted">Stored model values. Not measurements.</p>
       )}
+      {selected === null || element === null || editHref === undefined ? null : (
+        <p className="mt-3 text-sm">
+          <Link href={editHref(selected)} className="text-accent hover:underline">
+            Edit in Assets
+          </Link>
+        </p>
+      )}
+      {element === null ? null : children}
     </section>
   );
 }

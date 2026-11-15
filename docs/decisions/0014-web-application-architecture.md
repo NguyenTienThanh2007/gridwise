@@ -126,6 +126,30 @@ The explorer draws the stored network as SVG, with no graphics library.
 - **States** are told apart by shape and dash as well as colour: an open switch is a hollow
   square, a closed one filled; out-of-service elements are dashed and named so.
 
+### 11. Editing (P1.4c)
+
+- **Where.** Each grid has three tabs with their own addresses: Overview (details and the
+  network explorer), Assets and Settings. Grid and topology are loaded together for every
+  tab and reloaded together after a write, keeping the last answer on screen meanwhile, so
+  the header, table, inspector and diagram always show one version and open forms keep their
+  text. The explorer's inspector stays read-only and links to the Assets tab.
+- **What.** Exactly what the API accepts: an element's name, and either its service state
+  or, for a switch, its position in the stored simulation model. Electrical parameters are
+  not editable in the web app. The grid's name (a rename changes its topology hash) and
+  description are edited in Settings.
+- **How.** Limits as in the API (name 1–200 characters and not blank, description up to
+  2000). Save stays disabled until something changes, because every write moves the
+  version on. A service-state or model-position change shows a review step first: it
+  changes the stored simulation model only and sends nothing to any equipment.
+- **Versions.** Every write sends `If-Match` with the version the user saw. On `412` the
+  draft is kept, the current version is shown, and nothing is resent until the user has
+  reloaded and pressed Save again. Engine refusals (`422 grid_validation_failed`) and name
+  conflicts (`409`) are shown with the API's reasons.
+- **Deleting a grid** needs its exact name typed, says that it cannot be undone and that
+  simulation jobs keep their own copies, sends `If-Match`, and returns to the grid list.
+- **Filters** live in the component and are copied to the address, built from the live URL:
+  reading them back from the router would lose keystrokes made before it caught up.
+
 ## Consequences
 
 - P1.4 is five PRs (roadmap): a foundations and grids, b network explorer, c asset

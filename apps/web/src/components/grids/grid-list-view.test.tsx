@@ -78,4 +78,13 @@ describe("GridListView", () => {
       expect(screen.getByRole("link", { name: "Fixture feeder" })).toBeInTheDocument(),
     );
   });
+
+  it("confirms a deletion and can link to each grid's assets", async () => {
+    render(<GridListView deleted section="assets" load={async () => page([fixtureGrid()])} />);
+    expect(screen.getByText("The grid was deleted.")).toHaveAttribute("role", "status");
+    expect(await screen.findByRole("link", { name: "Fixture feeder" })).toHaveAttribute(
+      "href",
+      `/grid/${FIXTURE_GRID_ID}/assets`,
+    );
+  });
 });

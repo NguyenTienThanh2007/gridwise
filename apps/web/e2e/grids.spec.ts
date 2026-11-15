@@ -48,7 +48,7 @@ test("the grid page shows the stored model's metadata", async ({ page, request }
   };
 
   await page.goto(`/grid/${DEMO_GRID_ID}`);
-  await expect(page.getByText("Synthetic data")).toBeVisible();
+  await expect(page.getByText("Synthetic data").first()).toBeVisible();
   await expect(page.getByText("Not a real network; contains no measured data.")).toBeVisible();
   await expect(page.getByTitle(grid.topology_hash)).toHaveText(
     `${grid.topology_hash.slice(0, 12)}…`,

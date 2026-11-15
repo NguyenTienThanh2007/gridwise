@@ -55,7 +55,8 @@ export const NAV_ITEMS: readonly NavItem[] = [
     href: "/assets",
     label: "Assets",
     phase: "P1",
-    summary: "Transformers, lines, generators, loads, storage, meters and sensors.",
+    summary:
+      "Each grid's buses, lines, transformers, loads, generators, external grids and switches.",
   },
   {
     href: "/settings",

@@ -142,7 +142,7 @@ export interface Topology {
   network: Network;
 }
 
-function readBus(value: unknown): Bus {
+export function readBus(value: unknown): Bus {
   const o = record(value, "bus");
   const diagram = o.diagram === null || o.diagram === undefined ? null : record(o.diagram);
   return {
@@ -154,7 +154,7 @@ function readBus(value: unknown): Bus {
   };
 }
 
-function readLine(value: unknown): Line {
+export function readLine(value: unknown): Line {
   const o = record(value, "line");
   return {
     key: str(o, "key"),
@@ -181,7 +181,7 @@ function readTap(o: Record_): TapChanger {
   };
 }
 
-function readTransformer(value: unknown): Transformer {
+export function readTransformer(value: unknown): Transformer {
   const o = record(value, "transformer");
   return {
     key: str(o, "key"),
@@ -201,7 +201,7 @@ function readTransformer(value: unknown): Transformer {
   };
 }
 
-function readLoad(value: unknown): Load {
+export function readLoad(value: unknown): Load {
   const o = record(value, "load");
   return {
     key: str(o, "key"),
@@ -213,7 +213,7 @@ function readLoad(value: unknown): Load {
   };
 }
 
-function readGenerator(value: unknown): Generator {
+export function readGenerator(value: unknown): Generator {
   const o = record(value, "generator");
   return {
     key: str(o, "key"),
@@ -230,7 +230,7 @@ function readGenerator(value: unknown): Generator {
   };
 }
 
-function readExternalGrid(value: unknown): ExternalGrid {
+export function readExternalGrid(value: unknown): ExternalGrid {
   const o = record(value, "external grid");
   return {
     key: str(o, "key"),
@@ -242,7 +242,7 @@ function readExternalGrid(value: unknown): ExternalGrid {
   };
 }
 
-function readSwitch(value: unknown): Switch {
+export function readSwitch(value: unknown): Switch {
   const o = record(value, "switch");
   return {
     key: str(o, "key"),

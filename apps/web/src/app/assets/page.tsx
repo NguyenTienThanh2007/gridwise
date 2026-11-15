@@ -1,8 +1,17 @@
 import type { Metadata } from "next";
-import { PlannedFeature } from "@/components/planned-feature";
+import { GridListView } from "@/components/grids/grid-list-view";
+import { PageHeader } from "@/components/page-header";
 
 export const metadata: Metadata = { title: "Assets" };
 
 export default function Page() {
-  return <PlannedFeature href="/assets" />;
+  return (
+    <>
+      <PageHeader
+        title="Assets"
+        summary="Every asset belongs to one grid. Choose a grid to see and edit its assets."
+      />
+      <GridListView section="assets" />
+    </>
+  );
 }
