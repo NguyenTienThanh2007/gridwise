@@ -14,7 +14,7 @@ export function PlannedFeature({ href, detail }: { href: string; detail?: string
       <PageHeader title={item.label} summary={item.summary} />
       <section
         aria-label="Implementation status"
-        className="max-w-3xl rounded-lg border border-dashed border-line bg-panel p-6"
+        className="max-w-3xl rounded-panel border border-dashed border-line bg-panel p-6"
       >
         <p className="font-medium">Not implemented yet</p>
         <p className="mt-2 text-sm text-muted">

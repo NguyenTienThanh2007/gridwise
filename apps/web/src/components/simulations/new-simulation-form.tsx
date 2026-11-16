@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, useRef, useState } from "react";
 import { useGrids, useScenarios } from "@/components/simulations/use-names";
-import { DataOriginBadge } from "@/components/ui/badge";
+import { DataOriginBadge } from "@/components/ui/chip";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState, describeFailure } from "@/components/ui/error-state";
@@ -19,6 +19,7 @@ import {
   TOLERANCE_MAX,
   submitSimulation,
 } from "@/lib/resources/simulations";
+import { LoadingState } from "@/components/ui/loading-state";
 
 const NORMAL = "normal";
 
@@ -70,11 +71,7 @@ export function NewSimulationForm({
   const idempotency = useRef<{ request: string; key: string } | null>(null);
 
   if (grids.status === "loading") {
-    return (
-      <p role="status" className="text-sm text-muted">
-        Loading grids…
-      </p>
-    );
+    return <LoadingState label="Loading grids…" />;
   }
   if (grids.status === "error") {
     return <ErrorState failure={grids.failure} resource="grids" onRetry={reloadGrids} />;
@@ -84,7 +81,7 @@ export function NewSimulationForm({
       <EmptyState title="There is no grid to simulate">
         <p>
           Load the synthetic demonstration grid with{" "}
-          <code className="rounded bg-surface px-1">make seed-demo</code>.
+          <code className="rounded-control bg-surface px-1">make seed-demo</code>.
         </p>
       </EmptyState>
     );
@@ -137,7 +134,7 @@ export function NewSimulationForm({
         New simulation
       </h2>
 
-      <section className="space-y-3 rounded-lg border border-line bg-panel p-4">
+      <section className="space-y-3 rounded-panel border border-line bg-panel p-4">
         <Select
           wide
           label="Grid"
@@ -157,7 +154,7 @@ export function NewSimulationForm({
         </div>
       </section>
 
-      <section className="space-y-3 rounded-lg border border-line bg-panel p-4">
+      <section className="space-y-3 rounded-panel border border-line bg-panel p-4">
         <Select
           wide
           label="Scenario"
@@ -193,7 +190,7 @@ export function NewSimulationForm({
         </p>
       </section>
 
-      <fieldset className="space-y-3 rounded-lg border border-line bg-panel p-4">
+      <fieldset className="space-y-3 rounded-panel border border-line bg-panel p-4">
         <legend className="px-1 text-sm font-medium">Solver options (AC Newton-Raphson)</legend>
         <p className="text-xs text-muted">The engine&apos;s defaults suit most studies.</p>
         <div className="grid gap-4 sm:grid-cols-2">

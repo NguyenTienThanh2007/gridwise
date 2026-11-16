@@ -65,10 +65,10 @@ export function GridSettings({
 
   return (
     <section aria-labelledby="grid-settings-title" className="max-w-2xl">
-      <h2 id="grid-settings-title" className="mb-3 text-lg font-semibold">
+      <h2 id="grid-settings-title" className="mb-3 text-section-title">
         Name and description
       </h2>
-      <form onSubmit={onSubmit} className="space-y-4 rounded-lg border border-line bg-panel p-4">
+      <form onSubmit={onSubmit} className="space-y-4 rounded-panel border border-line bg-panel p-4">
         <TextField
           label="Name"
           value={name}

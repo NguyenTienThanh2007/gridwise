@@ -268,7 +268,7 @@ Overview, Assets and Settings tabs for each grid. Editing rules: decision 0014, 
 
 PR 17 merged as `fb200c1`. CI run 43678159611 on the merge commit passed all six jobs.
 
-#### P1.4d — Simulation workspace (implementation complete; pending review, CI verification and merge)
+#### P1.4d — Simulation workspace (merged)
 
 Jobs, New simulation and Scenarios tabs under `/simulations`, and a page per job. Rules:
 decision 0014, section 12.
@@ -284,6 +284,20 @@ decision 0014, section 12.
 | 7   | The job list names grids and scenarios, filters by grid and status in the address, and refreshes only on request                                             | `jobs-view.test.tsx`, `simulations.spec.ts`                                |
 | 8   | Submitted from the grid page, a simulation of the seeded grid is solved by the real worker and shown as converged                                            | `simulations.spec.ts` (CI end-to-end job runs the worker)                  |
 | 9   | No new dependency, no backend change; all earlier checks still pass                                                                                          | CI                                                                         |
+
+PR 18 merged as `a1b0cb5`. CI run 43681619087 on the merge commit passed all six jobs.
+
+#### UI redesign — design system (in progress; before P1.4e)
+
+Decision 0015. Five PRs, each verified in a browser at 1440, 1280, 768 and 390 px:
+
+| PR   | Scope                                                     | State                                                           |
+| ---- | --------------------------------------------------------- | --------------------------------------------------------------- |
+| UI-1 | Tokens, application shell, shared components, layout test | Implementation complete; pending review, CI verification, merge |
+| UI-2 | Dashboard (real grids and jobs) and grid list             | Not started                                                     |
+| UI-3 | Grid overview and network explorer                        | Not started                                                     |
+| UI-4 | Assets and settings                                       | Not started                                                     |
+| UI-5 | Simulation workspace and job pages                        | Not started                                                     |
 
 #### P1.4e — Results and reproductions (not started)
 

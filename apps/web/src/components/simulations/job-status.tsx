@@ -1,12 +1,14 @@
+import { Chip, type ChipTone } from "@/components/ui/chip";
 import type { Job } from "@/lib/resources/simulations";
 
-const TONES = {
-  queued: "border-line bg-surface text-muted",
-  running: "border-accent/40 bg-accent/10 text-accent",
-  completed: "border-ok/40 bg-ok/10 text-ok",
-  failed: "border-bad/40 bg-bad/10 text-bad",
-  cancelled: "border-line bg-surface text-muted",
-} as const;
+/** One status map for the whole app (decision 0015): the words say the state. */
+const TONES: Record<Job["status"], ChipTone> = {
+  queued: "neutral",
+  running: "accent",
+  completed: "ok",
+  failed: "bad",
+  cancelled: "neutral",
+};
 
 const LABELS = {
   queued: "Queued",
@@ -23,17 +25,9 @@ export function statusLabel(job: Pick<Job, "status" | "outcome">): string {
 }
 
 export function JobStatusBadge({ job }: { job: Pick<Job, "status" | "outcome"> }) {
-  const tone =
-    job.status === "completed" && job.outcome === "not_converged"
-      ? "border-warn/40 bg-warn/10 text-warn"
-      : TONES[job.status];
-  return (
-    <span
-      className={`inline-flex items-center whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-medium ${tone}`}
-    >
-      {statusLabel(job)}
-    </span>
-  );
+  const tone: ChipTone =
+    job.status === "completed" && job.outcome === "not_converged" ? "warn" : TONES[job.status];
+  return <Chip tone={tone}>{statusLabel(job)}</Chip>;
 }
 
 /** What the status means for the person waiting. */

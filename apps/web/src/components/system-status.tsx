@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { API_BASE_URL, fetchSystemStatus, type SystemStatus } from "@/lib/api";
+import { Property, PropertyList } from "@/components/ui/property-list";
 
 type ViewState = { kind: "loading" } | SystemStatus;
 
@@ -11,15 +12,6 @@ const DATABASE_LABEL = {
   not_migrated: "Reachable, schema not migrated",
   schema_mismatch: "Reachable, schema revision mismatch",
 } as const;
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between gap-4 border-t border-line py-2 text-sm">
-      <dt className="text-muted">{label}</dt>
-      <dd className="text-right font-medium">{value}</dd>
-    </div>
-  );
-}
 
 function headline(state: ViewState): { text: string; tone: string } {
   switch (state.kind) {
@@ -57,11 +49,11 @@ export function SystemStatusCard({
   return (
     <section
       aria-labelledby="system-status-title"
-      className="max-w-xl rounded-lg border border-line bg-panel p-6"
+      className="max-w-xl rounded-panel border border-line bg-panel p-6"
     >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 id="system-status-title" className="text-sm font-medium text-muted">
+          <h2 id="system-status-title" className="text-section-title">
             Platform status
           </h2>
           <p role="status" className={`mt-1 text-xl font-semibold ${tone}`}>
@@ -70,7 +62,7 @@ export function SystemStatusCard({
         </div>
         <button
           type="button"
-          className="rounded border border-line px-3 py-1.5 text-sm hover:bg-surface disabled:opacity-50"
+          className="rounded-control border border-line px-3 py-1.5 text-sm hover:bg-surface disabled:opacity-50"
           disabled={state.kind === "loading"}
           onClick={() => {
             setState({ kind: "loading" });
@@ -81,28 +73,27 @@ export function SystemStatusCard({
         </button>
       </div>
 
-      <dl className="mt-4">
-        <Row label="API" value={API_BASE_URL} />
+      <PropertyList className="mt-4 border-t border-line">
+        <Property label="API">{API_BASE_URL}</Property>
         {state.kind === "ready" || state.kind === "not_ready" ? (
           <>
-            <Row label="Database" value={DATABASE_LABEL[state.readiness.database]} />
-            <Row label="Schema revision" value={state.readiness.schema_revision ?? "None"} />
+            <Property label="Database">{DATABASE_LABEL[state.readiness.database]}</Property>
+            <Property label="Schema revision">{state.readiness.schema_revision ?? "None"}</Property>
             {state.readiness.database === "schema_mismatch" ? (
-              <Row
-                label="Expected revision"
-                value={state.readiness.expected_schema_revision ?? "Unknown"}
-              />
+              <Property label="Expected revision">
+                {state.readiness.expected_schema_revision ?? "Unknown"}
+              </Property>
             ) : null}
           </>
         ) : null}
         {state.kind === "ready" ? (
           <>
-            <Row label="API version" value={state.info.version} />
-            <Row label="Environment" value={state.info.environment} />
+            <Property label="API version">{state.info.version}</Property>
+            <Property label="Environment">{state.info.environment}</Property>
           </>
         ) : null}
-        {state.kind === "unreachable" ? <Row label="Reason" value={state.reason} /> : null}
-      </dl>
+        {state.kind === "unreachable" ? <Property label="Reason">{state.reason}</Property> : null}
+      </PropertyList>
 
       {state.kind === "ready" ? (
         <p className="mt-4 text-xs text-muted">{state.info.notice}</p>

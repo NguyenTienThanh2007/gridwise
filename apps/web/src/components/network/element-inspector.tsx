@@ -7,6 +7,7 @@ import { Value } from "@/components/ui/value";
 import { elementsAtBus, findElement } from "@/lib/network/graph";
 import type { ElementRef } from "@/lib/network/selection";
 import type { Network } from "@/lib/resources/topology";
+import { Property, PropertyList } from "@/components/ui/property-list";
 
 const SWITCH_KIND_LABELS = {
   circuit_breaker: "Circuit breaker",
@@ -19,15 +20,6 @@ const CONTROL_MODE_LABELS = {
   constant_power: "Constant power (P, Q)",
   voltage_control: "Voltage control (P, V)",
 } as const;
-
-function Row({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="grid grid-cols-2 gap-3 border-t border-line py-1.5 text-sm">
-      <dt className="text-muted">{label}</dt>
-      <dd>{children}</dd>
-    </div>
-  );
-}
 
 function Quantity({ value, unit }: { value: number; unit: string }) {
   return <Value value={value} unit={unit} reason="not set" />;
@@ -73,17 +65,17 @@ export function ElementInspector({
         if (bus === undefined) break;
         rows = (
           <>
-            <Row label="Nominal voltage">
+            <Property label="Nominal voltage">
               <Quantity value={bus.nominalVoltageKv} unit="kV" />
-            </Row>
-            <Row label="Service state">{service(bus.inService)}</Row>
-            <Row label="Diagram position">
+            </Property>
+            <Property label="Service state">{service(bus.inService)}</Property>
+            <Property label="Diagram position">
               {bus.diagram === null ? (
                 <span className="text-muted">None stored</span>
               ) : (
                 <span className="tabular-nums">{`${bus.diagram.x}, ${bus.diagram.y}`}</span>
               )}
-            </Row>
+            </Property>
           </>
         );
         break;
@@ -93,24 +85,26 @@ export function ElementInspector({
         if (line === undefined) break;
         rows = (
           <>
-            <Row label="From bus">{reference({ type: "buses", key: line.fromBusKey })}</Row>
-            <Row label="To bus">{reference({ type: "buses", key: line.toBusKey })}</Row>
-            <Row label="Length">
+            <Property label="From bus">
+              {reference({ type: "buses", key: line.fromBusKey })}
+            </Property>
+            <Property label="To bus">{reference({ type: "buses", key: line.toBusKey })}</Property>
+            <Property label="Length">
               <Quantity value={line.lengthKm} unit="km" />
-            </Row>
-            <Row label="Resistance">
+            </Property>
+            <Property label="Resistance">
               <Quantity value={line.rOhmPerKm} unit="Ω/km" />
-            </Row>
-            <Row label="Reactance">
+            </Property>
+            <Property label="Reactance">
               <Quantity value={line.xOhmPerKm} unit="Ω/km" />
-            </Row>
-            <Row label="Capacitance">
+            </Property>
+            <Property label="Capacitance">
               <Quantity value={line.cNfPerKm} unit="nF/km" />
-            </Row>
-            <Row label="Thermal limit">
+            </Property>
+            <Property label="Thermal limit">
               <Quantity value={line.maxIKa} unit="kA" />
-            </Row>
-            <Row label="Service state">{service(line.inService)}</Row>
+            </Property>
+            <Property label="Service state">{service(line.inService)}</Property>
           </>
         );
         break;
@@ -120,33 +114,33 @@ export function ElementInspector({
         if (item === undefined) break;
         rows = (
           <>
-            <Row label="HV bus">{reference({ type: "buses", key: item.hvBusKey })}</Row>
-            <Row label="LV bus">{reference({ type: "buses", key: item.lvBusKey })}</Row>
-            <Row label="Rated power">
+            <Property label="HV bus">{reference({ type: "buses", key: item.hvBusKey })}</Property>
+            <Property label="LV bus">{reference({ type: "buses", key: item.lvBusKey })}</Property>
+            <Property label="Rated power">
               <Quantity value={item.ratedPowerMva} unit="MVA" />
-            </Row>
-            <Row label="Rated voltage HV">
+            </Property>
+            <Property label="Rated voltage HV">
               <Quantity value={item.ratedVoltageHvKv} unit="kV" />
-            </Row>
-            <Row label="Rated voltage LV">
+            </Property>
+            <Property label="Rated voltage LV">
               <Quantity value={item.ratedVoltageLvKv} unit="kV" />
-            </Row>
-            <Row label="Short-circuit voltage">
+            </Property>
+            <Property label="Short-circuit voltage">
               <Quantity value={item.shortCircuitVoltagePercent} unit="%" />
-            </Row>
-            <Row label="Resistive part">
+            </Property>
+            <Property label="Resistive part">
               <Quantity value={item.shortCircuitResistivePercent} unit="%" />
-            </Row>
-            <Row label="Iron losses">
+            </Property>
+            <Property label="Iron losses">
               <Quantity value={item.ironLossesKw} unit="kW" />
-            </Row>
-            <Row label="No-load current">
+            </Property>
+            <Property label="No-load current">
               <Quantity value={item.noLoadCurrentPercent} unit="%" />
-            </Row>
-            <Row label="Phase shift">
+            </Property>
+            <Property label="Phase shift">
               <Quantity value={item.phaseShiftDegree} unit="°" />
-            </Row>
-            <Row label="Tap changer">
+            </Property>
+            <Property label="Tap changer">
               {item.tap === null ? (
                 <span className="text-muted">None</span>
               ) : (
@@ -154,8 +148,8 @@ export function ElementInspector({
                   {`${item.tap.side.toUpperCase()} side, position ${item.tap.position} (${item.tap.minPosition} to ${item.tap.maxPosition}, neutral ${item.tap.neutralPosition}), ${item.tap.stepPercent} % per step`}
                 </span>
               )}
-            </Row>
-            <Row label="Service state">{service(item.inService)}</Row>
+            </Property>
+            <Property label="Service state">{service(item.inService)}</Property>
           </>
         );
         break;
@@ -165,14 +159,14 @@ export function ElementInspector({
         if (item === undefined) break;
         rows = (
           <>
-            <Row label="Bus">{reference({ type: "buses", key: item.busKey })}</Row>
-            <Row label="Active power">
+            <Property label="Bus">{reference({ type: "buses", key: item.busKey })}</Property>
+            <Property label="Active power">
               <Quantity value={item.pMw} unit="MW" />
-            </Row>
-            <Row label="Reactive power">
+            </Property>
+            <Property label="Reactive power">
               <Quantity value={item.qMvar} unit="Mvar" />
-            </Row>
-            <Row label="Service state">{service(item.inService)}</Row>
+            </Property>
+            <Property label="Service state">{service(item.inService)}</Property>
           </>
         );
         break;
@@ -182,27 +176,27 @@ export function ElementInspector({
         if (item === undefined) break;
         rows = (
           <>
-            <Row label="Bus">{reference({ type: "buses", key: item.busKey })}</Row>
-            <Row label="Control mode">{CONTROL_MODE_LABELS[item.controlMode]}</Row>
-            <Row label="Active power">
+            <Property label="Bus">{reference({ type: "buses", key: item.busKey })}</Property>
+            <Property label="Control mode">{CONTROL_MODE_LABELS[item.controlMode]}</Property>
+            <Property label="Active power">
               <Quantity value={item.pMw} unit="MW" />
-            </Row>
-            <Row label="Reactive power">
+            </Property>
+            <Property label="Reactive power">
               <Value value={item.qMvar} unit="Mvar" reason="not set" />
-            </Row>
-            <Row label="Voltage set-point">
+            </Property>
+            <Property label="Voltage set-point">
               <Value value={item.voltageSetpointPu} unit="p.u." reason="not set" />
-            </Row>
-            <Row label="Minimum reactive power">
+            </Property>
+            <Property label="Minimum reactive power">
               <Value value={item.minQMvar} unit="Mvar" reason="not set" />
-            </Row>
-            <Row label="Maximum reactive power">
+            </Property>
+            <Property label="Maximum reactive power">
               <Value value={item.maxQMvar} unit="Mvar" reason="not set" />
-            </Row>
-            <Row label="Rated power">
+            </Property>
+            <Property label="Rated power">
               <Value value={item.ratedPowerMva} unit="MVA" reason="not set" />
-            </Row>
-            <Row label="Service state">{service(item.inService)}</Row>
+            </Property>
+            <Property label="Service state">{service(item.inService)}</Property>
           </>
         );
         break;
@@ -212,14 +206,14 @@ export function ElementInspector({
         if (item === undefined) break;
         rows = (
           <>
-            <Row label="Bus">{reference({ type: "buses", key: item.busKey })}</Row>
-            <Row label="Voltage set-point">
+            <Property label="Bus">{reference({ type: "buses", key: item.busKey })}</Property>
+            <Property label="Voltage set-point">
               <Quantity value={item.voltagePu} unit="p.u." />
-            </Row>
-            <Row label="Voltage angle">
+            </Property>
+            <Property label="Voltage angle">
               <Quantity value={item.voltageAngleDegree} unit="°" />
-            </Row>
-            <Row label="Service state">{service(item.inService)}</Row>
+            </Property>
+            <Property label="Service state">{service(item.inService)}</Property>
           </>
         );
         break;
@@ -235,12 +229,14 @@ export function ElementInspector({
               : { type: "buses", key: item.elementKey };
         rows = (
           <>
-            <Row label="Model position">{item.closed ? "Closed" : "Open"}</Row>
-            <Row label="Kind">{SWITCH_KIND_LABELS[item.kind]}</Row>
-            <Row label="At bus">{reference({ type: "buses", key: item.busKey })}</Row>
-            <Row label={item.elementType === "bus" ? "Couples to bus" : `On ${item.elementType}`}>
+            <Property label="Model position">{item.closed ? "Closed" : "Open"}</Property>
+            <Property label="Kind">{SWITCH_KIND_LABELS[item.kind]}</Property>
+            <Property label="At bus">{reference({ type: "buses", key: item.busKey })}</Property>
+            <Property
+              label={item.elementType === "bus" ? "Couples to bus" : `On ${item.elementType}`}
+            >
               {reference(target)}
-            </Row>
+            </Property>
           </>
         );
         break;
@@ -255,7 +251,7 @@ export function ElementInspector({
   return (
     <section
       aria-labelledby="inspector-title"
-      className="rounded-lg border border-line bg-panel p-4"
+      className="rounded-panel border border-line bg-panel p-4"
     >
       <div aria-live="polite">
         <h3 id="inspector-title" className="text-sm font-medium text-muted">
@@ -272,7 +268,9 @@ export function ElementInspector({
         )}
         {state === null ? null : <p className="mt-1 text-sm font-medium">{state}</p>}
       </div>
-      {rows === null ? null : <dl className="mt-3">{rows}</dl>}
+      {rows === null ? null : (
+        <PropertyList className="mt-3 border-t border-line">{rows}</PropertyList>
+      )}
       {connected.length === 0 ? null : (
         <div className="mt-4">
           <h4 className="text-xs font-medium uppercase tracking-wide text-muted">

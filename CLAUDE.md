@@ -32,8 +32,12 @@ distribution networks. Phases and acceptance criteria are in `docs/ROADMAP.md`.
   run 43673794414 passed all six jobs).
 - **P1.4c (asset management: Assets and Settings tabs, If-Match edits, grid delete) is
   merged** (PR 17, merge `fb200c1`; CI run 43678159611 passed all six jobs).
-- **P1.4d (simulation workspace: scenarios, submission, job list, followed job page):**
-  implementation complete; pending review, CI verification and merge.
+- **P1.4d (simulation workspace: scenarios, submission, job list, followed job page) is
+  merged** (PR 18, merge `a1b0cb5`; CI run 43681619087 passed all six jobs).
+- **UI redesign (decision 0015), before P1.4e, in five PRs:** UI-1 tokens, shell and
+  primitives: implementation complete; pending review, CI verification and merge. UI-2 to
+  UI-5 (dashboard and grid list, grid overview and explorer, assets and settings,
+  simulations) follow, each after approval.
 - Do not start a milestone or the next P1.4 PR without owner approval.
 
 ## Hard boundaries
@@ -78,6 +82,8 @@ distribution networks. Phases and acceptance criteria are in `docs/ROADMAP.md`.
   `src/lib/resources`: a payload of the wrong shape is an error state, never a guess. No
   mock data in the app; test fixtures live in `src/test/fixtures`. Placeholder routes show
   no data until the backend has it. No new runtime dependency without a decision.
+  Styling uses the design tokens and shared components of decision 0015 (`globals.css`,
+  `src/components/ui`): no raw colours, one component per job, no UI or icon library.
 - One PostgreSQL 18 server on the TimescaleDB image. Schemas by domain; add each new schema
   to `MANAGED_SCHEMAS` in `models/base.py`.
 - Tenant-owned tables carry `organization_id` and a row-level security policy from their

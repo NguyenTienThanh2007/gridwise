@@ -29,7 +29,7 @@ describe("GridListView", () => {
     expect(table).toHaveTextContent("Synthetic data");
     expect(table).toHaveTextContent("2026-11-14 11:30 UTC");
     expect(screen.getByText("Grids 1–1 of 1")).toBeInTheDocument();
-    expect(screen.getByText(/Development mode/)).toBeInTheDocument();
+    // The development-mode notice is shown once, by the application shell (app-shell.test.tsx).
   });
 
   it("says how to load the demonstration grid when there is none", async () => {

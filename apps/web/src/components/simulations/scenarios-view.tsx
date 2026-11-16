@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { ScenarioForm } from "@/components/simulations/scenario-form";
 import { useScenarios } from "@/components/simulations/use-names";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClass } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState, describeFailure } from "@/components/ui/error-state";
 import { formatTimestamp } from "@/lib/format";
@@ -15,6 +15,7 @@ import {
   describeModification,
   type fetchScenarios,
 } from "@/lib/resources/scenarios";
+import { LoadingState } from "@/components/ui/loading-state";
 
 function ScenarioCard({
   scenario,
@@ -42,7 +43,7 @@ function ScenarioCard({
   };
 
   return (
-    <li className="rounded-lg border border-line bg-panel p-4" data-scenario={scenario.name}>
+    <li className="rounded-panel border border-line bg-panel p-4" data-scenario={scenario.name}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="font-semibold">{scenario.name}</h3>
@@ -52,7 +53,7 @@ function ScenarioCard({
         </div>
         <Link
           href={`/simulations/new?scenario=${scenario.id}`}
-          className="rounded border border-line px-3 py-1.5 text-sm font-medium hover:bg-surface"
+          className={buttonClass("secondary", "sm")}
         >
           Simulate with this scenario
         </Link>
@@ -74,7 +75,7 @@ function ScenarioCard({
         )}
       </div>
       {confirming ? (
-        <div className="mt-3 rounded border border-bad/40 bg-bad/5 p-3">
+        <div className="mt-3 rounded-control border border-bad/40 bg-bad/5 p-3">
           <p className="text-sm">
             Delete this scenario? Jobs that used it keep their own copy of its changes.
           </p>
@@ -113,7 +114,7 @@ export function ScenariosView({
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       <section aria-labelledby="scenario-list-title">
-        <h2 id="scenario-list-title" className="mb-3 text-lg font-semibold">
+        <h2 id="scenario-list-title" className="mb-3 text-section-title">
           Stored scenarios
         </h2>
         {created === null ? null : (
@@ -122,9 +123,7 @@ export function ScenariosView({
           </p>
         )}
         {scenarios.status === "loading" ? (
-          <p role="status" className="text-sm text-muted">
-            Loading scenarios…
-          </p>
+          <LoadingState label="Loading scenarios…" />
         ) : scenarios.status === "error" ? (
           <ErrorState failure={scenarios.failure} resource="scenarios" onRetry={reload} />
         ) : scenarios.data.length === 0 ? (

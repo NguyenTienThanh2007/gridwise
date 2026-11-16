@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useState } from "react";
 import { JobStatusBadge } from "@/components/simulations/job-status";
 import { useGrids, useScenarios } from "@/components/simulations/use-names";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClass } from "@/components/ui/button";
 import { type Column, DataTable } from "@/components/ui/data-table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
@@ -23,6 +23,7 @@ import {
   fetchJobs,
 } from "@/lib/resources/simulations";
 import { type Loader, useResource } from "@/lib/use-resource";
+import { LoadingState } from "@/components/ui/loading-state";
 
 export const JOBS_PAGE_SIZE = 25;
 
@@ -164,18 +165,13 @@ export function JobsView({
           ]}
         />
         <Button onClick={reload}>Refresh</Button>
-        <Link
-          href="/simulations/new"
-          className="rounded border border-accent bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent/90"
-        >
+        <Link href="/simulations/new" className={buttonClass("primary")}>
           New simulation
         </Link>
       </div>
 
       {state.status === "loading" ? (
-        <p role="status" className="text-sm text-muted">
-          Loading jobs…
-        </p>
+        <LoadingState label="Loading jobs…" />
       ) : state.status === "error" ? (
         <ErrorState failure={state.failure} resource="jobs" onRetry={reload} />
       ) : state.data.total === 0 ? (
