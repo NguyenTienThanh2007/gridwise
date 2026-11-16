@@ -40,7 +40,10 @@ function describedBy(id: string, description: unknown, error: string | null | un
   return ids.length === 0 ? undefined : ids.join(" ");
 }
 
-const CONTROL = "mt-1 w-full rounded border px-2 py-1.5 text-sm";
+const CONTROL_BASE =
+  "mt-1 w-full rounded-control border bg-panel px-2 text-sm text-ink placeholder:text-subtle";
+/** Single-line controls share one height, so inputs, selects and buttons line up. */
+const CONTROL = `${CONTROL_BASE} h-8`;
 
 interface TextProps {
   label: string;
@@ -56,7 +59,7 @@ export function TextField({ label, value, onChange, description, error, maxLengt
   const id = useId();
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium">
+      <label htmlFor={id} className="block text-label">
         {label}
       </label>
       <input
@@ -66,10 +69,10 @@ export function TextField({ label, value, onChange, description, error, maxLengt
         onChange={(event) => onChange(event.target.value)}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy(id, description, error)}
-        className={`${CONTROL} ${error ? "border-bad" : "border-line"}`}
+        className={`${CONTROL} ${error ? "border-bad" : "border-line-strong"}`}
       />
       {maxLength === undefined ? null : (
-        <p className="mt-1 text-right text-xs tabular-nums text-muted">
+        <p className="mt-1 text-right text-xs tabular-nums text-subtle">
           {value.length} / {maxLength}
         </p>
       )}
@@ -82,7 +85,7 @@ export function TextArea({ label, value, onChange, description, error, maxLength
   const id = useId();
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium">
+      <label htmlFor={id} className="block text-label">
         {label}
       </label>
       <textarea
@@ -92,10 +95,10 @@ export function TextArea({ label, value, onChange, description, error, maxLength
         onChange={(event) => onChange(event.target.value)}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy(id, description, error)}
-        className={`${CONTROL} ${error ? "border-bad" : "border-line"}`}
+        className={`${CONTROL_BASE} py-1.5 ${error ? "border-bad" : "border-line-strong"}`}
       />
       {maxLength === undefined ? null : (
-        <p className="mt-1 text-right text-xs tabular-nums text-muted">
+        <p className="mt-1 text-right text-xs tabular-nums text-subtle">
           {value.length} / {maxLength}
         </p>
       )}
@@ -125,11 +128,12 @@ export function RadioGroup<T extends string>({
   const id = useId();
   return (
     <fieldset aria-describedby={describedBy(id, description, null)}>
-      <legend className="text-sm font-medium">{legend}</legend>
+      <legend className="text-label">{legend}</legend>
       <div className="mt-1 flex flex-wrap gap-4">
         {options.map((option) => (
-          <label key={option.value} className="flex items-center gap-2 text-sm">
+          <label key={option.value} className="flex h-7 items-center gap-2 text-sm">
             <input
+              className="accent-accent"
               type="radio"
               name={id}
               value={option.value}
@@ -162,7 +166,7 @@ export function Select<T extends string>({
   const id = useId();
   return (
     <div className={wide ? "w-full" : "max-w-full"}>
-      <label htmlFor={id} className="block text-sm font-medium">
+      <label htmlFor={id} className="block text-label">
         {label}
       </label>
       <select
@@ -172,7 +176,7 @@ export function Select<T extends string>({
           const chosen = options.find((option) => option.value === event.target.value);
           if (chosen !== undefined) onChange(chosen.value);
         }}
-        className={`${CONTROL} border-line bg-panel ${wide ? "" : "w-auto sm:max-w-xs"} max-w-full truncate`}
+        className={`${CONTROL} border-line-strong pr-7 ${wide ? "" : "w-auto sm:max-w-xs"} max-w-full truncate`}
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>

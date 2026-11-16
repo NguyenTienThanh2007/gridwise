@@ -7,16 +7,24 @@ const APP_DIR = path.join(import.meta.dirname, "../app");
 
 describe("navigation", () => {
   it("covers the primary routes of the product brief", () => {
+    // Working sections first; the planned placeholders after them (decision 0015).
     expect(NAV_ITEMS.map((item) => item.href)).toEqual([
       "/dashboard",
       "/grid",
+      "/simulations",
+      "/assets",
       "/monitoring",
       "/analytics",
       "/forecasting",
-      "/simulations",
       "/alerts",
-      "/assets",
       "/settings",
+    ]);
+    expect(NAV_ITEMS.filter((item) => item.group === "planned").map((item) => item.phase)).toEqual([
+      "P2",
+      "P3",
+      "P4",
+      "P2",
+      "P6",
     ]);
   });
 

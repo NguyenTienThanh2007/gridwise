@@ -36,7 +36,7 @@ export function ElementList({
   return (
     <section
       aria-labelledby="element-list-title"
-      className="rounded-lg border border-line bg-panel"
+      className="rounded-panel border border-line bg-panel"
     >
       <div className="border-b border-line p-3">
         <h3 id="element-list-title" className="text-sm font-medium">
@@ -50,7 +50,7 @@ export function ElementList({
           type="search"
           value={filter}
           onChange={(event) => setFilter(event.target.value)}
-          className="mt-1 w-full rounded border border-line px-2 py-1 text-sm"
+          className="mt-1 w-full rounded-control border border-line px-2 py-1 text-sm"
         />
       </div>
       <div className="max-h-[28rem] overflow-y-auto p-2">
@@ -73,7 +73,7 @@ export function ElementList({
                         type="button"
                         aria-pressed={active}
                         onClick={() => onSelect(ref)}
-                        className={`flex w-full items-baseline justify-between gap-2 rounded px-2 py-1 text-left text-sm ${
+                        className={`flex w-full items-baseline justify-between gap-2 rounded-control px-2 py-1 text-left text-sm ${
                           active ? "bg-accent/10 font-medium text-accent" : "hover:bg-surface"
                         }`}
                       >

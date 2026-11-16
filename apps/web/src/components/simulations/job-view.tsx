@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { type ReactNode, useCallback, useState } from "react";
+import { PageHeader } from "@/components/page-header";
+import { useCallback, useState } from "react";
 import {
   JobStatusBadge,
   statusExplanation,
@@ -9,7 +10,6 @@ import {
 } from "@/components/simulations/job-status";
 import { Button } from "@/components/ui/button";
 import { type Column, DataTable } from "@/components/ui/data-table";
-import { DevTenantNotice } from "@/components/ui/dev-tenant-notice";
 import { ErrorState, describeFailure } from "@/components/ui/error-state";
 import { Notice } from "@/components/ui/notice";
 import { formatTimestamp, shortHash, shortId } from "@/lib/format";
@@ -27,6 +27,9 @@ import { usePolling } from "@/lib/use-polling";
 import { useGrids } from "@/components/simulations/use-names";
 import type { fetchGrids } from "@/lib/resources/grids";
 import type { Loader } from "@/lib/use-resource";
+import { LoadingState } from "@/components/ui/loading-state";
+import { Property, PropertyList } from "@/components/ui/property-list";
+import { Panel } from "@/components/ui/section";
 
 const NOT_A_JOB_ID: ApiResult<Job> = {
   ok: false,
@@ -64,15 +67,6 @@ const ATTEMPT_COLUMNS: Column<Attempt>[] = [
     cell: (a) => (a.endedBy === null ? "Still running" : (ENDED_BY[a.endedBy] ?? a.endedBy)),
   },
 ];
-
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="border-t border-line py-2 first:border-t-0 sm:grid sm:grid-cols-3 sm:gap-4">
-      <dt className="text-sm text-muted">{label}</dt>
-      <dd className="text-sm sm:col-span-2">{children}</dd>
-    </div>
-  );
-}
 
 const SOURCE_TEXT = {
   current: "The grid is still at this version.",
@@ -153,29 +147,22 @@ function JobDetails({
   const modifications = job.scenario.specification.modifications;
   return (
     <>
-      <div className="mb-6">
-        <p className="text-sm">
-          <Link href="/simulations" className="text-accent hover:underline">
-            Simulations
-          </Link>
-        </p>
-        <div className="mt-1 flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-semibold">
-            Simulation job <code className="text-lg font-normal text-muted">{shortId(job.id)}</code>
-          </h1>
-          <JobStatusBadge job={job} />
-        </div>
-        <p className="mt-1 max-w-3xl text-xs text-muted">
-          A power-flow simulation of a stored synthetic model. Results are simulated, not measured.
-          Nothing is sent to any equipment.
-        </p>
-      </div>
+      <PageHeader
+        breadcrumbs={[{ href: "/simulations", label: "Simulations" }]}
+        title={
+          <>
+            Simulation job <code className="font-normal text-muted">{shortId(job.id)}</code>
+          </>
+        }
+        meta={<JobStatusBadge job={job} />}
+        summary="A power-flow simulation of a stored synthetic model. Results are simulated, not measured. Nothing is sent to any equipment."
+      />
 
       <section
         aria-labelledby="job-status-title"
-        className="max-w-3xl rounded-lg border border-line bg-panel p-4"
+        className="max-w-3xl rounded-panel border border-line bg-panel p-4"
       >
-        <h2 id="job-status-title" className="text-sm font-medium text-muted">
+        <h2 id="job-status-title" className="text-section-title">
           Status
         </h2>
         <div aria-live="polite">
@@ -198,10 +185,10 @@ function JobDetails({
 
       {job.status === "completed" ? (
         <section aria-labelledby="job-result-title" className="mt-6 max-w-3xl">
-          <h2 id="job-result-title" className="mb-2 text-lg font-semibold">
+          <h2 id="job-result-title" className="mb-2 text-section-title">
             Result
           </h2>
-          <div className="rounded-lg border border-dashed border-line bg-panel p-4 text-sm text-muted">
+          <div className="rounded-panel border border-dashed border-line bg-panel p-4 text-sm text-muted">
             {job.outcome === "not_converged"
               ? "This run did not converge: there are no values, and none will be shown."
               : "The result is stored. Its summary, element values and reproduction history are shown here from P1.4e."}
@@ -211,81 +198,85 @@ function JobDetails({
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <section aria-labelledby="job-input-title">
-          <h2 id="job-input-title" className="mb-2 text-sm font-medium text-muted">
+          <h2 id="job-input-title" className="mb-2 text-section-title">
             What was simulated
           </h2>
-          <dl className="rounded-lg border border-line bg-panel px-4">
-            <Field label="Grid">
-              {job.source.gridId === null ? (
-                <span className="text-muted">Deleted grid</span>
-              ) : (
-                <Link href={`/grid/${job.source.gridId}`} className="text-accent hover:underline">
-                  {gridName ?? "Open grid"}
-                </Link>
-              )}
-              <span className="tabular-nums">, version {job.source.gridVersion}</span>
-              <p className="text-xs text-muted">{SOURCE_TEXT[job.source.status]}</p>
-            </Field>
-            <Field label="Scenario">
-              {modifications.length === 0 ? (
-                "Normal operation (no changes)"
-              ) : (
-                <>
-                  {job.scenario.id === null ? (
-                    <p className="text-xs text-muted">
-                      The scenario was deleted; this job keeps its copy.
-                    </p>
-                  ) : null}
-                  <ul className="list-disc pl-5">
-                    {modifications.map((modification, index) => (
-                      <li key={index}>{describeModification(modification)}</li>
-                    ))}
-                  </ul>
-                </>
-              )}
-            </Field>
-            <Field label="Solver options">
-              {ALGORITHMS[job.configuration.algorithm] ?? job.configuration.algorithm}, tolerance{" "}
-              {job.configuration.toleranceMva} MVA, at most {job.configuration.maxIterations}{" "}
-              iterations
-            </Field>
-            <Field label="Input snapshot">
-              <code title={job.inputSnapshotHash}>{shortHash(job.inputSnapshotHash)}</code>
-            </Field>
-          </dl>
+          <Panel className="py-1">
+            <PropertyList>
+              <Property label="Grid">
+                {job.source.gridId === null ? (
+                  <span className="text-muted">Deleted grid</span>
+                ) : (
+                  <Link href={`/grid/${job.source.gridId}`} className="text-accent hover:underline">
+                    {gridName ?? "Open grid"}
+                  </Link>
+                )}
+                <span className="tabular-nums">, version {job.source.gridVersion}</span>
+                <p className="text-xs text-muted">{SOURCE_TEXT[job.source.status]}</p>
+              </Property>
+              <Property label="Scenario">
+                {modifications.length === 0 ? (
+                  "Normal operation (no changes)"
+                ) : (
+                  <>
+                    {job.scenario.id === null ? (
+                      <p className="text-xs text-muted">
+                        The scenario was deleted; this job keeps its copy.
+                      </p>
+                    ) : null}
+                    <ul className="list-disc pl-5">
+                      {modifications.map((modification, index) => (
+                        <li key={index}>{describeModification(modification)}</li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </Property>
+              <Property label="Solver options">
+                {ALGORITHMS[job.configuration.algorithm] ?? job.configuration.algorithm}, tolerance{" "}
+                {job.configuration.toleranceMva} MVA, at most {job.configuration.maxIterations}{" "}
+                iterations
+              </Property>
+              <Property label="Input snapshot">
+                <code title={job.inputSnapshotHash}>{shortHash(job.inputSnapshotHash)}</code>
+              </Property>
+            </PropertyList>
+          </Panel>
         </section>
 
         <section aria-labelledby="job-run-title">
-          <h2 id="job-run-title" className="mb-2 text-sm font-medium text-muted">
+          <h2 id="job-run-title" className="mb-2 text-section-title">
             How it ran
           </h2>
-          <dl className="rounded-lg border border-line bg-panel px-4">
-            <Field label="Submitted">{formatTimestamp(job.createdAt)}</Field>
-            <Field label="Started">
-              {job.startedAt === null ? "–" : formatTimestamp(job.startedAt)}
-            </Field>
-            <Field label="Finished">
-              {job.finishedAt === null ? "–" : formatTimestamp(job.finishedAt)}
-            </Field>
-            {job.cancelledAt === null ? null : (
-              <Field label="Cancelled">{formatTimestamp(job.cancelledAt)}</Field>
-            )}
-            <Field label="Engine">
-              {job.engine.executedVersion === null
-                ? `Requested ${job.engine.requestedVersion}`
-                : `${job.engine.executedVersion} (requested ${job.engine.requestedVersion})`}
-            </Field>
-            <Field label="Solver">
-              {job.engine.solverName === null
-                ? "–"
-                : `${job.engine.solverName} ${job.engine.solverVersion ?? ""}`}
-            </Field>
-          </dl>
+          <Panel className="py-1">
+            <PropertyList>
+              <Property label="Submitted">{formatTimestamp(job.createdAt)}</Property>
+              <Property label="Started">
+                {job.startedAt === null ? "–" : formatTimestamp(job.startedAt)}
+              </Property>
+              <Property label="Finished">
+                {job.finishedAt === null ? "–" : formatTimestamp(job.finishedAt)}
+              </Property>
+              {job.cancelledAt === null ? null : (
+                <Property label="Cancelled">{formatTimestamp(job.cancelledAt)}</Property>
+              )}
+              <Property label="Engine">
+                {job.engine.executedVersion === null
+                  ? `Requested ${job.engine.requestedVersion}`
+                  : `${job.engine.executedVersion} (requested ${job.engine.requestedVersion})`}
+              </Property>
+              <Property label="Solver">
+                {job.engine.solverName === null
+                  ? "–"
+                  : `${job.engine.solverName} ${job.engine.solverVersion ?? ""}`}
+              </Property>
+            </PropertyList>
+          </Panel>
         </section>
       </div>
 
       <section aria-labelledby="job-attempts-title" className="mt-6 max-w-3xl">
-        <h2 id="job-attempts-title" className="mb-2 text-sm font-medium text-muted">
+        <h2 id="job-attempts-title" className="mb-2 text-section-title">
           Attempts
         </h2>
         {job.attempts === null || job.attempts.length === 0 ? (
@@ -324,16 +315,14 @@ export function JobView({
 
   return (
     <>
-      <DevTenantNotice />
       {state.status === "loading" ? (
-        <p role="status" className="text-sm text-muted">
-          Loading job…
-        </p>
+        <LoadingState label="Loading job…" />
       ) : state.status === "error" ? (
         <>
-          <h1 className="mb-4 text-2xl font-semibold">
-            {state.failure.kind === "not_found" ? "Job not found" : "Simulation job"}
-          </h1>
+          <PageHeader
+            breadcrumbs={[{ href: "/simulations", label: "Simulations" }]}
+            title={state.failure.kind === "not_found" ? "Job not found" : "Simulation job"}
+          />
           <ErrorState failure={state.failure} resource="job" onRetry={refresh} />
           <p className="mt-4 text-sm">
             <Link href="/simulations" className="text-accent hover:underline">

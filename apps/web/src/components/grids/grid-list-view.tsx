@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { useCallback, useState } from "react";
-import { DataOriginBadge } from "@/components/ui/badge";
+import { DataOriginBadge } from "@/components/ui/chip";
 import { Button } from "@/components/ui/button";
 import { type Column, DataTable } from "@/components/ui/data-table";
-import { DevTenantNotice } from "@/components/ui/dev-tenant-notice";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { formatTimestamp } from "@/lib/format";
 import { type Grid, type GridPage, fetchGrids } from "@/lib/resources/grids";
 import { type Loader, useResource } from "@/lib/use-resource";
+import { LoadingState } from "@/components/ui/loading-state";
 
 export const PAGE_SIZE = 25;
 
@@ -56,23 +56,21 @@ export function GridListView({
 
   return (
     <>
-      <DevTenantNotice />
       {deleted ? (
         <p role="status" className="mb-4 text-sm font-medium text-ok">
           The grid was deleted.
         </p>
       ) : null}
       {state.status === "loading" ? (
-        <p role="status" className="text-sm text-muted">
-          Loading grids…
-        </p>
+        <LoadingState label="Loading grids…" />
       ) : state.status === "error" ? (
         <ErrorState failure={state.failure} resource="grids" onRetry={reload} />
       ) : state.data.total === 0 ? (
         <EmptyState title="No grids are stored yet">
           <p>
             Load the synthetic demonstration grid (the CIGRE medium-voltage benchmark) with{" "}
-            <code className="rounded bg-surface px-1">make seed-demo</code>, then reload this page.
+            <code className="rounded-control bg-surface px-1">make seed-demo</code>, then reload
+            this page.
           </p>
         </EmptyState>
       ) : (

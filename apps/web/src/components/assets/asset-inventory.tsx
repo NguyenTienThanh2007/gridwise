@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { AssetEditForm } from "@/components/assets/asset-edit-form";
 import { AssetTable } from "@/components/assets/asset-table";
 import { ElementInspector } from "@/components/network/element-inspector";
-import { DataOriginBadge } from "@/components/ui/badge";
+import { DataOriginBadge } from "@/components/ui/chip";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Select } from "@/components/ui/fields";
@@ -78,7 +78,7 @@ export function AssetInventory({
   return (
     <section aria-labelledby="assets-title">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <h2 id="assets-title" className="text-lg font-semibold">
+        <h2 id="assets-title" className="mb-2 text-section-title">
           Assets
         </h2>
         <div className="flex items-center gap-2">
@@ -124,7 +124,7 @@ export function AssetInventory({
             type="search"
             value={filters.query}
             onChange={(event) => setFilters({ ...filters, query: event.target.value })}
-            className="mt-1 rounded border border-line px-2 py-1.5 text-sm"
+            className="mt-1 rounded-control border border-line px-2 py-1.5 text-sm"
           />
         </div>
         <p role="status" className="pb-1.5 text-sm text-muted">

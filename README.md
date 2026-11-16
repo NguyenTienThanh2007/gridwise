@@ -45,9 +45,11 @@ inspector for each element's stored values.
 their service state or a switch's model position, and rename, describe or delete the grid.
 Every change edits the stored simulation model only.
 
-**P1.4d (simulation workspace): implementation complete; pending review, CI verification and
-merge.** The Simulations section creates scenarios, queues power-flow simulations of a grid
+**P1.4d (simulation workspace) is merged** (PR 18): The Simulations section creates scenarios, queues power-flow simulations of a grid
 and follows each job until the worker finishes it; a queued job can be cancelled.
+
+**UI redesign (decision 0015), in progress before P1.4e:** a design system for an industrial
+engineering product (tokens, application shell, shared components), applied page by page.
 
 No power flow runs in the API process: a submission is queued and the worker solves it. There is no authentication: the grid, scenario and simulation APIs
 exist only in local and test environments and act for one fixed development tenant. See [docs/ROADMAP.md](docs/ROADMAP.md).

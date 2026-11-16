@@ -7,7 +7,7 @@ import { ElementInspector } from "@/components/network/element-inspector";
 import { ElementList } from "@/components/network/element-list";
 import { NetworkCanvas } from "@/components/network/network-canvas";
 import { NetworkLegend } from "@/components/network/network-legend";
-import { DataOriginBadge } from "@/components/ui/badge";
+import { DataOriginBadge } from "@/components/ui/chip";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Notice } from "@/components/ui/notice";
@@ -150,7 +150,7 @@ function Explorer({ topology, gridId }: { topology: Topology; gridId: string }) 
 export function NetworkExplorer({ topology, gridId }: { topology: Topology; gridId: string }) {
   return (
     <section aria-labelledby="network-title" className="mt-8">
-      <h2 id="network-title" className="mb-3 text-lg font-semibold">
+      <h2 id="network-title" className="mb-3 text-section-title">
         Network
       </h2>
       <Explorer topology={topology} gridId={gridId} />

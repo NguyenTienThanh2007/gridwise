@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { type Column as DataColumn, DataTable } from "@/components/ui/data-table";
 import { SINGULAR, stateText } from "@/components/network/describe";
 import { formatQuantity } from "@/lib/format";
 import type { AssetRow } from "@/lib/assets/filter";
@@ -6,11 +6,7 @@ import { type ElementRef, sameRef } from "@/lib/network/selection";
 import type { ElementType } from "@/lib/resources/grids";
 import type { Network } from "@/lib/resources/topology";
 
-interface Column {
-  header: string;
-  cell: (row: AssetRow) => ReactNode;
-  numeric?: boolean;
-}
+type Column = DataColumn<AssetRow>;
 
 function busName(network: Network, key: string): string {
   return network.buses.find((bus) => bus.key === key)?.name ?? key;
@@ -138,44 +134,13 @@ export function AssetTable({
   ];
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-line bg-panel">
-      <table className="w-full border-collapse text-sm">
-        <caption className="sr-only">Assets of this grid</caption>
-        <thead>
-          <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-muted">
-            {columns.map((column) => (
-              <th
-                key={column.header}
-                scope="col"
-                className={`px-3 py-2 font-medium ${column.numeric ? "text-right" : ""}`}
-              >
-                {column.header}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => {
-            const active = sameRef({ type: row.type, key: row.element.key }, selected);
-            return (
-              <tr
-                key={`${row.type}:${row.element.key}`}
-                data-asset={`${row.type}:${row.element.key}`}
-                className={`border-b border-line last:border-b-0 ${active ? "bg-accent/10" : ""}`}
-              >
-                {columns.map((column) => (
-                  <td
-                    key={column.header}
-                    className={`px-3 py-2 ${column.numeric ? "text-right tabular-nums" : ""}`}
-                  >
-                    {column.cell(row)}
-                  </td>
-                ))}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      caption="Assets of this grid"
+      columns={columns}
+      rows={rows}
+      rowKey={(row) => `${row.type}:${row.element.key}`}
+      isSelected={(row) => sameRef({ type: row.type, key: row.element.key }, selected)}
+      rowAttributes={(row) => ({ "data-asset": `${row.type}:${row.element.key}` })}
+    />
   );
 }

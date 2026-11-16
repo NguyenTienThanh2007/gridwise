@@ -67,7 +67,7 @@ describe("GridWorkspace", () => {
     expect(screen.getByRole("table", { name: "Elements by type" })).toHaveTextContent(
       "External grids1",
     );
-    expect(screen.getByText(/Development mode/)).toBeInTheDocument();
+    // The development-mode notice is shown once, by the application shell (app-shell.test.tsx).
     expect(screen.getByRole("heading", { level: 2, name: "Network" })).toBeInTheDocument();
     const tabs = screen.getByRole("navigation", { name: "Grid sections" });
     expect(tabs.querySelector('[aria-current="page"]')).toHaveTextContent("Overview");

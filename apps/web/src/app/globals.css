@@ -1,26 +1,110 @@
 @import "tailwindcss";
 
+/*
+ * GRIDWISE design tokens: "Industrial Minimalism" (decision 0015).
+ *
+ * One neutral ramp, one accent, semantic colours, and a separate provenance colour, so
+ * "synthetic data" never reads as a warning. The accent is reserved for primary actions,
+ * current navigation, selection and focus. Change values here, not in components.
+ */
 @theme {
-  --color-surface: #f6f7f9;
-  --color-panel: #ffffff;
-  --color-line: #dfe3e8;
-  --color-ink: #17202b;
-  --color-muted: #5b6776;
-  --color-rail: #111a24;
-  --color-rail-ink: #c5ced8;
-  --color-accent: #0f766e;
-  --color-ok: #15803d;
-  --color-warn: #b45309;
-  --color-bad: #b91c1c;
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* Neutrals */
+  --color-surface: #f3f4f5; /* page canvas */
+  --color-panel: #ffffff; /* surfaces */
+  --color-sunken: #eceef0; /* table headers, toolbars, banners */
+  --color-line: #dadde1; /* hairlines */
+  --color-line-strong: #bcc2c9; /* control borders */
+  --color-ink: #14181d; /* primary text */
+  --color-muted: #555e69; /* secondary text */
+  --color-subtle: #7c8591; /* tertiary text, placeholders */
+  --color-rail: #16191d; /* navigation rail */
+  --color-rail-ink: #aeb5be;
+  --color-rail-line: #2a2f36;
+
+  /* Accent: one restrained technical blue */
+  --color-accent: #1f5fbf;
+  --color-accent-hover: #194f9f;
+  --color-accent-subtle: #e9f0fa;
+
+  /* Semantic */
+  --color-ok: #1d7a46;
+  --color-ok-subtle: #e7f3ec;
+  --color-warn: #9a5b00;
+  --color-warn-subtle: #fbf1e2;
+  --color-bad: #b42318;
+  --color-bad-subtle: #fbeceb;
+
+  /* Provenance: where data comes from, not a warning */
+  --color-provenance: #6b5b2e;
+  --color-provenance-subtle: #f4efe3;
+
+  /* Network diagram */
+  --color-net-grid: #e3e6e9;
+
+  /* Type */
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-mono:
+    ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+
+  /* Geometry */
+  --radius-control: 2px;
+  --radius-panel: 4px;
+}
+
+/* Type roles. Sizes follow one scale: 11 / 12 / 13 / 14 / 16 / 20 / 24 px. */
+@utility text-page-title {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+@utility text-section-title {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+@utility text-label {
+  font-size: 0.8125rem;
+  line-height: 1.125rem;
+  font-weight: 500;
+}
+
+html {
+  font-size: 16px;
 }
 
 body {
   background: var(--color-surface);
   color: var(--color-ink);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+/* Identifiers, keys and hashes: monospace, never ligatures. */
+code,
+kbd,
+samp {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  font-variant-ligatures: none;
 }
 
 :focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0s !important;
+    animation-duration: 0s !important;
+  }
 }

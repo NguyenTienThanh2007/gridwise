@@ -83,9 +83,9 @@ export function ScenarioForm({
     <form
       onSubmit={onSubmit}
       aria-labelledby="scenario-form-title"
-      className="space-y-4 rounded-lg border border-line bg-panel p-4"
+      className="space-y-4 rounded-panel border border-line bg-panel p-4"
     >
-      <h2 id="scenario-form-title" className="text-lg font-semibold">
+      <h2 id="scenario-form-title" className="mb-2 text-section-title">
         New scenario
       </h2>
       <p className="text-sm text-muted">
@@ -114,7 +114,7 @@ export function ScenarioForm({
           const own = attempted ? (errors[index] ?? {}) : {};
           const server = serverErrors(failure, index);
           return (
-            <fieldset key={change.id} className="space-y-3 rounded border border-line p-3">
+            <fieldset key={change.id} className="space-y-3 rounded-control border border-line p-3">
               <legend className="px-1 text-sm font-medium">Change {index + 1}</legend>
               <div className="flex items-end gap-3">
                 <Select

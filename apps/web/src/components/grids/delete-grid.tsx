@@ -47,10 +47,13 @@ export function DeleteGrid({
 
   return (
     <section aria-labelledby="delete-grid-title" className="max-w-2xl">
-      <h2 id="delete-grid-title" className="mb-3 text-lg font-semibold text-bad">
+      <h2 id="delete-grid-title" className="mb-3 text-section-title text-bad!">
         Delete grid
       </h2>
-      <form onSubmit={onSubmit} className="space-y-3 rounded-lg border border-bad/40 bg-bad/5 p-4">
+      <form
+        onSubmit={onSubmit}
+        className="space-y-3 rounded-panel border border-bad/40 bg-bad/5 p-4"
+      >
         <p className="text-sm">
           Deletes this grid and all of its elements. <strong>This cannot be undone.</strong>{" "}
           Simulation jobs keep their own copies of the input and their results; they will show their
@@ -59,7 +62,7 @@ export function DeleteGrid({
         {grid.id === DEMO_GRID_ID ? (
           <p className="text-sm text-muted">
             This is the synthetic demonstration grid. It can be recreated with{" "}
-            <code className="rounded bg-surface px-1">make seed-demo</code>.
+            <code className="rounded-control bg-surface px-1">make seed-demo</code>.
           </p>
         ) : null}
         <div>
@@ -72,7 +75,7 @@ export function DeleteGrid({
             value={typed}
             autoComplete="off"
             onChange={(event) => setTyped(event.target.value)}
-            className="mt-1 w-full rounded border border-line px-2 py-1.5 text-sm"
+            className="mt-1 w-full rounded-control border border-line px-2 py-1.5 text-sm"
           />
         </div>
         {failure === null ? null : (

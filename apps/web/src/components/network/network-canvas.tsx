@@ -156,7 +156,7 @@ export function NetworkCanvas({ network, layout, view, selected, onSelect, onVie
       aria-describedby="network-diagram-help"
       viewBox={viewBox(view)}
       preserveAspectRatio="xMidYMid meet"
-      className="h-[32rem] w-full touch-none select-none rounded-lg border border-line bg-panel"
+      className="h-[32rem] w-full touch-none select-none rounded-panel border border-line bg-panel"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
