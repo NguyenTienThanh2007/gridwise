@@ -22,7 +22,7 @@ services:
     # TimescaleDB image from the start so the image never has to be swapped. The image
     # pre-installs the extension in every database; GRIDWISE creates no hypertables
     # until P2 (docs/decisions/0003).
-    image: timescale/timescaledb:2.31.0-pg18
+    image: timescale/timescaledb:2.32.0-pg18
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
