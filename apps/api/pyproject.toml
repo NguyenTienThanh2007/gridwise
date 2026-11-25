@@ -5,7 +5,7 @@ description = "GRIDWISE backend API."
 requires-python = ">=3.13,<3.14"
 dependencies = [
     "alembic>=1.20,<2",
-    "fastapi>=0.162,<0.163",
+    "fastapi>=0.162,<0.166",
     # Installed with the API so its image carries the solver stack for the worker
     # processes that arrive in P1.3. The API package itself must never import the solver
     # adapter (enforced by packages/grid-engine/tests/test_import_boundary.py).
